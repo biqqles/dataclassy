@@ -119,7 +119,7 @@ def _generate_init(class_annotations: Dict[str, Any], defaults: Dict[str, Any], 
 
     signature = f'lambda self, {", ".join(arguments + default_arguments + kwargs)}: '
     body = ' or '.join(assignments) or 'None'
-    function = eval(signature + body, defaults)
+    function = eval(signature + body, {}, defaults)  # an empty globals ensures defaults is not polluted with builtins
     function.__annotations__ = class_annotations
     return function
 
