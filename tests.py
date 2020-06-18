@@ -100,7 +100,7 @@ class Tests(unittest.TestCase):
         self.assertTrue(hasattr(self.b, '__slots__'))
         self.assertFalse(hasattr(self.b, '__dict__'))
         e = self.Epsilon(1, 2, 3)
-        self.assertLess(getsizeof(e), getsizeof(self.b))
+        self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
 
     def test_empty_dataclass(self):
         """Test data classes with no fields and data classes with only class fields."""
