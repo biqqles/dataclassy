@@ -22,10 +22,17 @@ All in a tidy codebase that's a fraction of the size of Python's dataclasses!
 
 ## Usage
 ### Installation
-Install the latest version from this repository with pip:
+Install the latest stable version from PyPI with pip:
 
 ```sh
-pip install https://github.com/biqqles/dataclassy/archive/master.zip
+pip install dataclassy
+```
+
+
+Or install the latest development version straight from this repository:
+
+```sh
+pip install https://github.com/biqqles/dataclassy/archive/master.zip -U
 ```
 
 
@@ -131,7 +138,7 @@ Dynamically create a data class with name `name`, fields `fields`, default field
 
 ### Type hints
 #### Internal
-The `Internal` type wrapper marks a field as being "internal" to the data class. Fields which begin with the ["internal use"](https://www.python.org/dev/peps/pep-0008/#id36) idiomatic indicator `_` or the [private field](https://docs.python.org/3/tutorial/classes.html#private-variables) interpreter indicator `__` are automatically treated as internal fields.  The `Internal` type wrapper therefore serves as an alternative method of indicating that a field is internal for situations where you are unable to name your fields in this way.
+The `Internal` type wrapper marks a field as being "internal" to the data class. Fields which begin with the ["internal use"](https://www.python.org/dev/peps/pep-0008/#descriptive-naming-styles) idiomatic indicator `_` or the [private field](https://docs.python.org/3/tutorial/classes.html#private-variables) interpreter indicator `__` are automatically treated as internal fields.  The `Internal` type wrapper therefore serves as an alternative method of indicating that a field is internal for situations where you are unable to name your fields in this way.
 
 #### DataClass
 Use this type hint to indicate that a variable, parameter or field should be a generic data class instance. For example, dataclassy uses these in the signatures of `as_dict`, `as_tuple` and `fields` to show that these functions should be called on data class instances

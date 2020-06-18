@@ -2,13 +2,16 @@ from setuptools import setup
 
 setup(
     name='dataclassy',
-    version='0.1',
+    version='0.2',
+
     author='biqqles',
     author_email='biqqles@protonmail.com',
+    url='https://github.com/biqqles/dataclassy',
+
     description="An alternative to Python's dataclasses",
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
-    url='https://github.com/biqqles/deconstruct',
+
     packages=['dataclassy'],
     classifiers=[
         'Programming Language :: Python :: 3',
