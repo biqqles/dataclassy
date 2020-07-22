@@ -8,7 +8,7 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType
-from typing import Any, Callable, Dict, Generic, Tuple, TypeVar
+from typing import Any, Dict, Generic, TypeVar
 
 DataClass = Any  # type hint for variables that should be data class instances
 T = TypeVar('T')
@@ -78,37 +78,6 @@ class DataClassMeta(type):
         return type.__new__(mcs, name, bases, dict_)
 
 
-def is_dataclass(obj: Any) -> bool:
-    """Return True if the given object is a data class as implemented in this package, otherwise False."""
-    return getattr(obj, '__metaclass__', None) is DataClassMeta
-
-
-def is_dataclass_instance(obj: Any) -> bool:
-    """Return True if the given object is an instance of a data class, otherwise False."""
-    return is_dataclass(obj) and type(obj) is not DataClassMeta
-
-
-def fields(dataclass: DataClass, internals=False) -> Dict[str, Any]:
-    """Return a dict of `dataclass`'s fields and their values. `internals` selects whether to include internal fields.
-    A field is defined as a class-level variable with a type annotation."""
-    assert is_dataclass_instance(dataclass)
-    return {f: getattr(dataclass, f) for f in _filter_annotations(dataclass.__annotations__, internals)}
-
-
-def as_dict(dataclass: DataClass, dict_factory=dict) -> Dict[str, Any]:
-    """Recursively create a dict of a dataclass instance's fields and their values.
-    This function is recursively called on data classes, named tuples and iterables."""
-    assert is_dataclass_instance(dataclass)
-    return _recurse_structure(dataclass, dict_factory)
-
-
-def as_tuple(dataclass: DataClass) -> Tuple:
-    """Recursively create a tuple of the values of a dataclass instance's fields, in definition order.
-    This function is recursively called on data classes, named tuples and iterables."""
-    assert is_dataclass_instance(dataclass)
-    return _recurse_structure(dataclass, lambda k_v: tuple(v for k, v in k_v))
-
-
 def _generate_init(class_annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool) -> FunctionType:
     """Generate and return an __init__ method for a data class."""
     arguments = [str(a) for a in class_annotations if a not in defaults]
@@ -124,30 +93,11 @@ def _generate_init(class_annotations: Dict[str, Any], defaults: Dict[str, Any], 
     return function
 
 
-# method overrides which are constant for all data classes
+# method implementations which are constant for all data classes
+from .functions import fields, as_tuple
+
 _generated_eq = lambda self, other: as_tuple(self) == as_tuple(other)
 _generated_iter = lambda self: iter(as_tuple(self))
 _generated_repr = lambda self: f'{self.__class__.__name__}(' \
         f'{", ".join(f"{f}={v!r}" for f, v in fields(self, not self.__dataclass__["hide_internals"]).items())})'
 _generated_attr = lambda *args: exec('raise AttributeError("Frozen class")')
-
-
-def _filter_annotations(annotations: Dict[str, Any], internals: bool) -> Dict[str, Any]:
-    """Filter an annotations dict for to remove or keep internal fields."""
-    return annotations if internals else {f: a for f, a in annotations.items()
-                                          if not f.startswith('_') and not Internal.is_internal(a)}
-
-
-def _recurse_structure(var: Any, iter_proc: Callable) -> Any:
-    """Recursively convert an arbitrarily nested structure beginning at `var`, copying and processing any iterables
-    encountered with `iter_proc`."""
-    if is_dataclass(var):
-        var = fields(var, internals=True)
-    if hasattr(var, '_asdict'):  # handle named tuples
-        # noinspection PyCallingNonCallable, PyProtectedMember
-        var = var._asdict()
-    if isinstance(var, dict):
-        return iter_proc((_recurse_structure(k, iter_proc), _recurse_structure(v, iter_proc)) for k, v in var.items())
-    if isinstance(var, (list, tuple)):
-        return type(var)(_recurse_structure(e, iter_proc) for e in var)
-    return var

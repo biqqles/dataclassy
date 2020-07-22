@@ -5,7 +5,8 @@
  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
 from .decorator import dataclass, create_dataclass
-from .dataclass import as_dict, as_tuple, fields, DataClass, Internal
+from .dataclass import DataClass, Internal
+from .functions import fields, as_dict, as_tuple
 
-# aliases for migration from dataclasses
+# aliases intended for migration from dataclasses
 asdict, astuple, make_dataclass = as_dict, as_tuple, create_dataclass
