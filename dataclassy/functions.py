@@ -42,6 +42,11 @@ def as_tuple(dataclass: DataClass) -> Tuple:
     return _recurse_structure(dataclass, lambda k_v: tuple(v for k, v in k_v))
 
 
+def replace(dataclass: DataClass, **changes) -> DataClass:
+    """Return a new copy of `dataclass` with field values replaced as specified in `changes`."""
+    return type(dataclass)(**dict(fields(dataclass, internals=True), **changes))
+
+
 def _filter_annotations(annotations: Dict[str, Any], internals: bool) -> Dict[str, Any]:
     """Filter an annotations dict for to remove or keep internal fields."""
     return annotations if internals else {f: a for f, a in annotations.items()
