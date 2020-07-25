@@ -65,7 +65,7 @@ class DataClassMeta(type):
                 del dict_[d]
             del dict_['__slots__']
         if options['init']:
-            dict_.setdefault('__init__', _generate_init(all_annotations, all_defaults, options['kwargs']))
+            dict_['__new__'] = _generate_new(all_annotations, all_defaults, options['kwargs'])
         if options['repr']:
             dict_.setdefault('__repr__', _generated_repr)
         if options['eq']:
@@ -78,17 +78,21 @@ class DataClassMeta(type):
         return type.__new__(mcs, name, bases, dict_)
 
 
-def _generate_init(class_annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool) -> FunctionType:
-    """Generate and return an __init__ method for a data class."""
+def _generate_new(class_annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool) -> FunctionType:
+    """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
+    When the data class is initialised, arguments to this function are applied to the fields of the new instance. Using
+    __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation."""
     arguments = [str(a) for a in class_annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in class_annotations if a in defaults]
     kwargs = ['**kwargs' if gen_kwargs else '']
     assignments = [f'object.__setattr__(self, {k!r}, {k}.copy() if hasattr({k}, "copy") else {k})' for k
                    in class_annotations]
 
-    signature = f'lambda self, {", ".join(arguments + default_arguments + kwargs)}: '
-    body = ' or '.join(assignments) or 'None'
-    function = eval(signature + body, {}, defaults)  # an empty globals ensures defaults is not polluted with builtins
+    signature = f'def __new__(cls, {", ".join(arguments + default_arguments + kwargs)}):'
+    statements = [f'self = object.__new__(cls)', *assignments, 'return self']
+
+    exec('\n\t'.join([signature, *statements]), {}, defaults)
+    function = defaults.pop('__new__')
     function.__annotations__ = class_annotations
     return function
 
