@@ -25,7 +25,7 @@ def dataclass(cls: type = None, **options):
     return apply_metaclass  # otherwise, return function for later evaluation
 
 
-def create_dataclass(name: str, fields: Dict[str, type], defaults: Dict[str, Any], bases=()) -> type:
+def create_dataclass(name: str, fields: Dict[str, type], defaults: Dict[str, Any], bases=(), **options) -> type:
     """Dynamically create a data class with name `name`, fields `fields`, default field values `defaults` and
     inheriting from `bases`."""
-    return dataclass(type(name, bases, dict(defaults, __annotations__=fields)))
+    return dataclass(type(name, bases, dict(defaults, __annotations__=fields)), **options)
