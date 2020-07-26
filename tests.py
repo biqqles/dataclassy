@@ -59,6 +59,11 @@ class Tests(unittest.TestCase):
         self.assertTrue(self.Beta.__dataclass__['slots'])
         self.assertFalse(self.Delta.__dataclass__['slots'])
 
+    def test_invalid_decorator_use(self):
+        """Test invalid use of the decorator."""
+        with self.assertRaises(TypeError):
+            dataclass(1)
+
     def test_readme(self):
         """Test all examples from the project readme."""
         @dataclass  # with default parameters
