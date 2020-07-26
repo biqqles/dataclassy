@@ -102,6 +102,19 @@ class Tests(unittest.TestCase):
         e = self.Epsilon(1, 2, 3)
         self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
 
+    def test_frozen(self):
+        """Test correct generation of __setattr__ and __delattr__ for a frozen class."""
+        @dataclass(frozen=True)
+        class Frozen:
+            a: int
+            b: int
+
+        f = Frozen(1, 2)
+        with self.assertRaises(AttributeError):
+            f.a = 3
+        with self.assertRaises(AttributeError):
+            del f.b
+
     def test_empty_dataclass(self):
         """Test data classes with no fields and data classes with only class fields."""
         @dataclass
