@@ -6,11 +6,12 @@
 
  This file contains tests for dataclassy.
 """
+from typing import Dict, List, Tuple
 import unittest
 from collections import namedtuple
-from typing import Dict, List, Tuple
 from inspect import signature
 from sys import getsizeof
+
 from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, Internal, replace
 
 
@@ -146,6 +147,30 @@ class Tests(unittest.TestCase):
         self.assertEqual(a.mutable, [2])
         self.assertEqual(b.mutable, [3])
         self.assertEqual(c.mutable, 4)
+
+    def test_custom_init(self):
+        """Test user-defined __init__ used for post-initialisation logic."""
+        @dataclass
+        class CustomInit:
+            a: int
+            b: int
+
+            def __init__(self, a, b, c):
+                self.d = (self.a + self.b) / c
+
+        custom = CustomInit(1, 2, 3)
+        self.assertEqual(custom.d, 1.0)
+
+        @dataclass
+        class CustomInitKwargs:
+            a: int
+            b: int
+
+            def __init__(self, *args, **kwargs):
+                self.c = kwargs
+
+        custom_kwargs = CustomInitKwargs(1, 2, c=3)
+        self.assertEqual(custom_kwargs.c, {'c': 3})
 
     def test_fields(self):
         """Test fields()."""

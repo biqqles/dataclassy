@@ -65,7 +65,7 @@ class DataClassMeta(type):
                 del dict_[d]
             del dict_['__slots__']
         if options['init']:
-            dict_['__new__'] = _generate_new(all_annotations, all_defaults, options['kwargs'])
+            dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults, options['kwargs']))
         if options['repr']:
             dict_.setdefault('__repr__', _generated_repr)
         if options['eq']:
@@ -82,14 +82,20 @@ def _generate_new(class_annotations: Dict[str, Any], defaults: Dict[str, Any], g
     """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
     When the data class is initialised, arguments to this function are applied to the fields of the new instance. Using
     __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation."""
-    arguments = [str(a) for a in class_annotations if a not in defaults]
-    default_arguments = [f'{a}={a}' for a in class_annotations if a in defaults]
-    kwargs = ['**kwargs' if gen_kwargs else '']
-    assignments = [f'object.__setattr__(self, {k!r}, {k}.copy() if hasattr({k}, "copy") else {k})' for k
-                   in class_annotations]
+    user_init = '__init__' in defaults
 
-    signature = f'def __new__(cls, {", ".join(arguments + default_arguments + kwargs)}):'
-    statements = [f'self = object.__new__(cls)', *assignments, 'return self']
+    arguments = [a for a in class_annotations if a not in defaults]
+    default_arguments = [f'{a}={a}' for a in class_annotations if a in defaults]
+    args = ['*args'] if user_init else []
+    kwargs = ['**kwargs'] if gen_kwargs or user_init else []
+
+    parameters = ', '.join(arguments + default_arguments + args + kwargs)
+
+    assignments = [f'object.__setattr__(self, {k!r}, {k}.copy() if hasattr({k}, "copy") else {k})'
+                   for k in class_annotations]
+
+    signature = f'def __new__(cls, {parameters}):'
+    statements = [f'self = object.__new__(cls)', *assignments, f'self.__init__({parameters})', 'return self']
 
     exec('\n\t'.join([signature, *statements]), {}, defaults)
     function = defaults.pop('__new__')
