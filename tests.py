@@ -11,7 +11,7 @@ from collections import namedtuple
 from typing import Dict, List, Tuple
 from inspect import signature
 from sys import getsizeof
-from dataclassy import dataclass, as_dict, as_tuple, create_dataclass, fields, Internal, replace
+from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, Internal, replace
 
 
 class Tests(unittest.TestCase):
@@ -142,9 +142,9 @@ class Tests(unittest.TestCase):
         """Test as_dict()."""
         self.assertEqual(as_dict(self.e), {'g': {'x': 1, 'y': 2, 'z': 3}, 'h': [{'g': 4, 'h': 5, '_i': 6}], '_i': 0})
 
-    def test_create_dataclass(self):
-        """Test functional creation of a data class using create_dataclass."""
-        dynamic = create_dataclass('Dynamic', dict(name=str), {})
+    def test_make_dataclass(self):
+        """Test functional creation of a data class using make_dataclass."""
+        dynamic = make_dataclass('Dynamic', dict(name=str), {})
         dynamic(name='Dynamic')
 
     def test_replace(self):

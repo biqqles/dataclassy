@@ -4,9 +4,9 @@
  License, v. 2.0. If a copy of the MPL was not distributed with this
  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
-from .decorator import dataclass, create_dataclass
+from .decorator import dataclass, make_dataclass
 from .dataclass import DataClass, Internal
 from .functions import fields, as_dict, as_tuple, replace
 
 # aliases intended for migration from dataclasses
-asdict, astuple, make_dataclass = as_dict, as_tuple, create_dataclass
+asdict, astuple = as_dict, as_tuple

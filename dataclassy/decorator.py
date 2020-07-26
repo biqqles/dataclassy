@@ -6,16 +6,15 @@
 
  This file contains code relating to dataclassy's decorator.
 """
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 from .dataclass import DataClassMeta
 
 
-def dataclass(cls: type = None, **options):
+def dataclass(cls: Optional[type] = None, **options):
     """The decorator used to apply DataClassMeta to a class."""
     def apply_metaclass(to_class, metaclass=DataClassMeta):
         """Apply a metaclass to a class."""
-        dict_ = dict(to_class.__dict__)
-        dict_.update(__metaclass__=metaclass)
+        dict_ = dict(vars(to_class), __metaclass__=metaclass)
         return metaclass(to_class.__name__, to_class.__bases__, dict_, **options)
 
     if cls:  # if decorator used with no arguments, apply metaclass to the class immediately
@@ -25,7 +24,7 @@ def dataclass(cls: type = None, **options):
     return apply_metaclass  # otherwise, return function for later evaluation
 
 
-def create_dataclass(name: str, fields: Dict[str, type], defaults: Dict[str, Any], bases=(), **options) -> type:
+def make_dataclass(name: str, fields: Dict[str, type], defaults: Dict[str, Any], bases=(), **options) -> type:
     """Dynamically create a data class with name `name`, fields `fields`, default field values `defaults` and
     inheriting from `bases`."""
     return dataclass(type(name, bases, dict(defaults, __annotations__=fields)), **options)
