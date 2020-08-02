@@ -1,12 +1,16 @@
 # dataclassy
-**dataclassy** is a reimplementation of data classes in Python - an alternative to the built-in [dataclasses module](https://docs.python.org/3/library/dataclasses.html) that avoids many of its [common](https://stackoverflow.com/q/51575931) [pitfalls](https://stackoverflow.com/q/50180735). dataclassy is designed to be more flexible, less verbose, and more powerful than dataclasses, while retaining a familiar interface.
+**dataclassy** is a reimplementation of data classes in Python — an alternative to the built-in [dataclasses module](https://docs.python.org/3/library/dataclasses.html) that avoids many of its [common](https://stackoverflow.com/q/51575931) [pitfalls](https://stackoverflow.com/q/50180735). dataclassy is designed to be more flexible, less verbose, and more powerful than dataclasses, while retaining a familiar interface.
+
+### What are data classes?
+Simply put, data classes are classes optimised for storing data. In this sense they are similar to record or struct types in other languages. However, Python's data classes can also have methods, making them more reminiscent of Scala's [case classes](https://docs.scala-lang.org/tour/case-classes.html). In Python, data classes take the form of a decorator which, when applied to a class, automatically generates methods to set the class's fields from arguments to its constructor, represent it as a string, and more.
 
 ### Why use dataclassy?
 Data classes from **dataclassy** offer the following advantages over those from **dataclasses**:
 
+- Cleaner code: no messy `InitVar`, `ClassVar`, `field` or `__post_init__`
 - Friendly inheritance:
-    - No need to apply a decorator to each subclass - just once and all following classes will also be data classes
-    - Complete freedom in field ordering - no headaches if a field with a default value follows a field without one 
+    - No need to apply a decorator to each and every subclass - just once and all following classes will also be data classes
+    - Complete freedom in field ordering - no headaches if a field with a default value follows a field without one
 - Optional generation of:
     - `__slots__`, significantly improving memory efficiency and lookup performance
     - `**kwargs`, simplifying dataclass instantiation from dictionaries
@@ -15,10 +19,11 @@ Data classes from **dataclassy** offer the following advantages over those from 
 
 In addition, dataclassy:
 
-- Is pure Python, with zero dependencies
+- Has no dependencies
 - Supports Python 3.6 and up
+- Has 100% test coverage
 
-All in a tidy codebase that's a fraction of the size of Python's dataclasses!
+All in a tiny, tidy codebase that's a fraction of the size of Python's dataclasses or other alternatives like attrs.
 
 ## Usage
 ### Installation
@@ -28,7 +33,6 @@ Install the latest stable version from PyPI with pip:
 pip install dataclassy
 ```
 
-
 Or install the latest development version straight from this repository:
 
 ```sh
@@ -37,7 +41,7 @@ pip install https://github.com/biqqles/dataclassy/archive/master.zip -U
 
 
 ### Migration
-For basic applications, it is possible to instantly migrate from dataclasses to dataclassy by simply changing
+For simple use cases it is possible to instantly migrate from dataclasses to dataclassy by simply changing
 
 ```Python
 from dataclasses import dataclass
@@ -49,12 +53,12 @@ to
 from dataclassy import dataclass
 ```
 
-dataclassy also includes aliases for its functions - `asdict` for [`as_dict`](#as_dictdataclass-dict_factorydict), `astuple` for [`as_tuple`](#as_tupledataclass) and `make_dataclass` for [`create_dataclass`](#create_dataclassname-fields-defaults-bases) - to assist in migration from dataclasses.
+dataclassy [implements](#functions) all of dataclasses' functions, and it also includes aliases for the functions [`as_dict`](#as_dictdataclass-dict_factorydict) (`asdict`) and [`as_tuple`](#as_tupledataclass) (`astuple`) to assist in migration from dataclasses. Constructs from dataclasses like `field`, `InitVar` and `__post_init__` are not supported nor required in dataclassy because it uses Python's built-in syntactic features to accomplish the same things.
 
-## API
-### Decorator
-#### `dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True)`
-The decorator used to signify that a class definition should become a data class. Usage is simple:
+
+### Examples
+#### The basics
+To define a data class, simply apply the `@dataclass` decorator to a class definition:
 
 ```Python
 @dataclass  # with default parameters
@@ -63,31 +67,66 @@ class Pet:
     age: int
     species: str
     foods: List[str] = []
-    SOME_CONSTANT = 232
+    fluffy: bool
 ```
 
-The decorator returns a new data class with generated methods as detailed below. If the class already defines a particular method, it will not be replaced with a generated one.
+Without arguments to the decorator, the resulting class will behave very similarly to its equivalent from the built-in module. However, dataclassy's decorator has some additional options over dataclasses', and it is also inherited so that subclasses of data classes are automatically data classes too.
 
-Without arguments, its behaviour is almost identical to its equivalent in the built-in module. However, dataclassy's decorator only needs to be applied once, and all subclasses will become data classes with the same parameters. The decorator can still be reapplied to subclasses in order to change parameters.
+The decorator generates various methods for the class. Which ones exactly depend on the options to the decorator. For example, `@dataclass(repr=False)` will prevent a `__repr__` method from being generated. `@dataclass` is equivalent to using the decorator with default parameters (i.e. `@dataclass` and `@dataclass()` are equivalent). Options to the decorator are detailed fully in the [next section](#decorator-options).
 
-A data class' fields are defined using Python's type annotations syntax. Data classes can of course also contain methods.
+You can exclude a class attribute from dataclassy's mechanisms entirely by simply defining it without a type annotation. This can be used for class variables and constants.
 
-As shown, class variables and constants are represented by the **absence** of type annotations.
+#### Default values
+Default values for fields work exactly as default arguments to functions (and in fact this is how they are implemented), with one difference: for mutable defaults, a copy is automatically created for each class instance. This means that a new copy of the `list` field `foods` in `Pet` above will be created each time it is instantiated, so that appending to that attribute in one instance will not affect other instances.
 
-#### Decorator parameters
+#### Inheritance
+Unlike dataclasses, dataclassy's decorator only needs to be applied once, and all subclasses will become data classes with the same options as the parent class. The decorator can still be reapplied to subclasses in order to apply new parameters.
+
+To change the type, or to add or change the default value of a field in a subclass, simply redeclare it in the subclass.
+
+#### Post-initialisation logic
+
+You can define custom post-initialisation logic (such as calculating new fields based on the value of others) by defining an `__init__` method. This works because dataclassy uses `__new__` to set the attributes of the class before `__init__` is called. This is demonstrated in the following example:
+
+```Python
+@dataclass
+class CustomInit:
+    a: int
+    b: int
+    
+    def __init__(self, a, b, c):
+        self.d = (self.a + self.b) / c
+```
+
+When this class is instantiated with `CustomInit(1, 2, 3)`, it gets a new instance attribute `d` which is calculated using the value of the `__init__`-only parameter `c`.
+
+When defining an `__init__`, you *must* ensure that the signature includes, in order, all fields of the class in addition to your init-only parameters, either by explicitly listing them as shown, or by using `*args` and/or `**kwargs` (e.g. ``def __init__(self, *args, c)`. Note however that this syntax makes `c` a  *keyword-only argument*). This prevents ambiguity when initialising the class. Python will enforce this by raising a `RuntimeError` if you do not.
+
+This mechanism performs the roles of dataclasses' `InitVar` and `__post_init__`.
+
+## API
+### Decorator
+#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True)`
+The decorator used to signify that a class definition should become a data class. The decorator returns a new data class with generated methods as detailed below. If the class already defines a particular method, it will not be replaced with a generated one.
+
+Without arguments, its behaviour is, superficially, almost identical to its equivalent in the built-in module. However, dataclassy's decorator only needs to be applied once, and all subclasses will become data classes with the same parameters. The decorator can still be reapplied to subclasses in order to change parameters.
+
+A data class' fields are defined using Python's type annotations syntax. To change the type or default value of a field in a subclass, simply redeclare it.
+
+This decorator takes advantage of two equally important features available in Python 3.6 and up: variable type annotations and dictionaries being ordered (the latter is formally only standardised in Python 3.7 but is the case for all implementations of Python 3.6, i.e. CPython and PyPy).
+
+#### Decorator options
 
 > The term "field", as used in this section, refers to a class-level variable with a type annotation. For more information, see the documentation for [`fields()`](#fieldsdataclass-internalsfalse) below.
 
 ##### `init`
-If true (the default), generate an [`__init__`](https://docs.python.org/3/reference/datamodel.html#object.__init__) method that has as parameters all fields up its inheritance chain. These are ordered in definition order, with all fields with default values placed towards the end, following all fields without them.
+If true (the default), generate a [`__new__`](https://docs.python.org/3/reference/datamodel.html#object.__new__) method that has as parameters all fields up its inheritance chain. These are ordered in definition order, with all fields with default values placed towards the end, following all fields without them. The method initialises the class by applying these parameters to the class as attributes.
 
-This is an important distinction from dataclasses, where all fields are simply ordered in definition order, and is what allows dataclassy's data classes to be far more flexible in terms of inheritance. 
+This ordering is an important distinction from dataclasses, where all fields are simply ordered in definition order, and is what allows dataclassy's data classes to be far more flexible in terms of inheritance. 
 
 You can verify the signature of the generated initialiser for any class using `signature` from the `inspect` module. For example, `print(inspect.signature(Pet))` will output `(name: str, age: int, species: str, foods: List[str] = [])`.
 
-This generated `__init__` will assign its parameters to the fields of the new dataclass instance.
-
-A shallow copy will be created for mutable arguments (defined as those defining a `copy` method). This means that default field values that are mutable (e.g. a list) will not be mutated between instances. For example, a copy of the list field `foods` of `Pet` will be created for each instance, meaning that appending to that attribute in one instance will not affect other instances.
+A shallow copy will be created for mutable arguments (defined as those defining a `copy` method). This means that default field values that are mutable (e.g. a list) will not be mutated between instances.
 
 ##### `repr`
 If true (the default), generate a [`__repr__`](https://docs.python.org/3/reference/datamodel.html#object.__repr__) method that displays all fields (or if `hide_internals` is true, all fields excluding internal ones) of the data class instance and their values.
@@ -99,7 +138,7 @@ If true (the default), generate an [`__eq__`](https://docs.python.org/3/referenc
 If true, generate an [`__iter__`](https://docs.python.org/3/reference/datamodel.html#object.__iter__) method that returns the values of the class's fields, in order of definition. This can be used to destructure a data class instance, as with a Scala `case class` or a Python `namedtuple`.
 
 ##### `kwargs`
-If true, add [`**kwargs`](https://docs.python.org/3.3/glossary.html#term-parameter) to the end of the parameter list for `__init__`. This simplifies data class intantiation from dictionaries that may have keys in addition to the fields of the dataclass (i.e. `SomeDataClass(**some_dict)`).
+If true, add [`**kwargs`](https://docs.python.org/3.3/glossary.html#term-parameter) to the end of the parameter list for `__init__`. This simplifies data class instantiation from dictionaries that may have keys in addition to the fields of the dataclass (i.e. `SomeDataClass(**some_dict)`).
 
 ##### `slots`
 If true, generate a [`__slots__`](https://docs.python.org/3/reference/datamodel.html#slots) attribute for the class. This reduces the memory footprint of instances and attribute lookup overhead. However, `__slots__` come with a few [restrictions](https://docs.python.org/3/reference/datamodel.html#notes-on-using-slots) (for example, multiple inheritance becomes tricky) that you should be aware of.
@@ -133,16 +172,19 @@ Recursively create a tuple of the values of a dataclass instance's fields, in de
 
 This function is recursively called on data classes, named tuples and iterables.
 
-#### `create_dataclass(name, fields, defaults, bases=())`
+#### `make_dataclass(name, fields, defaults, bases=(), **options)`
 Dynamically create a data class with name `name`, fields `fields`, default field values `defaults` and inheriting from `bases`.
+
+#### `replace(dataclass, **changes)`
+Return a new copy of `dataclass` with field values replaced as specified in `changes`.
 
 ### Type hints
 #### Internal
 The `Internal` type wrapper marks a field as being "internal" to the data class. Fields which begin with the ["internal use"](https://www.python.org/dev/peps/pep-0008/#descriptive-naming-styles) idiomatic indicator `_` or the [private field](https://docs.python.org/3/tutorial/classes.html#private-variables) interpreter indicator `__` are automatically treated as internal fields.  The `Internal` type wrapper therefore serves as an alternative method of indicating that a field is internal for situations where you are unable to name your fields in this way.
 
 #### DataClass
-Use this type hint to indicate that a variable, parameter or field should be a generic data class instance. For example, dataclassy uses these in the signatures of `as_dict`, `as_tuple` and `fields` to show that these functions should be called on data class instances
+Use this type hint to indicate that a variable, parameter or field should be a generic data class instance. For example, dataclassy uses these in the signatures of `as_dict`, `as_tuple` and `fields` to show that these functions should be called on data class instances.
 
 
 ### To be added
-- An equivalent for `__post_init__`
+- The missing decorator options from dataclasses: `order=False` and `unsafe_hash=False`.

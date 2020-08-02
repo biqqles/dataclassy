@@ -2,13 +2,13 @@ from setuptools import setup
 
 setup(
     name='dataclassy',
-    version='0.2',
+    version='0.3',
 
     author='biqqles',
     author_email='biqqles@protonmail.com',
     url='https://github.com/biqqles/dataclassy',
 
-    description="An alternative to Python's dataclasses",
+    description='A reimplementation of data classes in Python',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
 
