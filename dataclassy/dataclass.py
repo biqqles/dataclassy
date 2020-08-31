@@ -104,9 +104,9 @@ def _generate_new(class_annotations: Dict[str, Any], defaults: Dict[str, Any], g
 
 
 # method implementations which are constant for all data classes
-from .functions import fields, as_tuple
+from .functions import fields, as_tuple, is_dataclass_instance
 
-_generated_eq = lambda self, other: as_tuple(self) == as_tuple(other)
+_generated_eq = lambda self, other: is_dataclass_instance(other) and as_tuple(self) == as_tuple(other)
 _generated_iter = lambda self: iter(as_tuple(self))
 _generated_repr = lambda self: f'{self.__class__.__name__}(' \
         f'{", ".join(f"{f}={v!r}" for f, v in fields(self, not self.__dataclass__["hide_internals"]).items())})'

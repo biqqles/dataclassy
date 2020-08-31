@@ -100,6 +100,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(self.b, self.b)
         unequal_b = self.Beta(10, 20, 30)
         self.assertNotEqual(self.b, unequal_b)
+        self.assertNotEqual(self.b, [0])  # test comparisons with non-dataclasses
 
     def test_slots(self):
         """Test correct generation and efficacy of a __slots__ attribute."""
