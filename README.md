@@ -1,5 +1,5 @@
 # dataclassy
-**dataclassy** is a reimplementation of data classes in Python — an alternative to the built-in [dataclasses module](https://docs.python.org/3/library/dataclasses.html) that avoids many of its [common](https://stackoverflow.com/q/51575931) [pitfalls](https://stackoverflow.com/q/50180735). dataclassy is designed to be more flexible, less verbose, and more powerful than dataclasses, while retaining a familiar interface.
+**dataclassy** is a reimplementation of data classes in Python — an alternative to the built-in [dataclasses module](https://docs.python.org/3/library/dataclasses.html) that avoids many of [its](https://stackoverflow.com/questions/54678337) [common](https://stackoverflow.com/q/51575931) [pitfalls](https://stackoverflow.com/q/50180735). dataclassy is designed to be more flexible, less verbose, and more powerful than dataclasses, while retaining a familiar interface.
 
 ### What are data classes?
 Simply put, data classes are classes optimised for storing data. In this sense they are similar to record or struct types in other languages. However, Python's data classes can also have methods, making them more reminiscent of Scala's [case classes](https://docs.scala-lang.org/tour/case-classes.html). In Python, data classes take the form of a decorator which, when applied to a class, automatically generates methods to set the class's fields from arguments to its constructor, represent it as a string, and more.
@@ -113,7 +113,7 @@ Without arguments, its behaviour is, superficially, almost identical to its equi
 
 A data class' fields are defined using Python's type annotations syntax. To change the type or default value of a field in a subclass, simply redeclare it.
 
-This decorator takes advantage of two equally important features available in Python 3.6 and up: variable type annotations and dictionaries being ordered (the latter is formally only standardised in Python 3.7 but is the case for all implementations of Python 3.6, i.e. CPython and PyPy).
+This decorator takes advantage of two equally important features added in Python 3.6: [variable annotations](https://docs.python.org/3/glossary.html#term-variable-annotation) and [dictionaries being ordered](https://docs.python.org/3.7/tutorial/datastructures.html#dictionaries). (The latter is technically an [implementation detail](https://docs.python.org/3.6/whatsnew/3.6.html#whatsnew36-compactdict) of Python 3.6, only becoming standardised in Python 3.7, but is the case for all current implementations of Python 3.6, i.e. CPython and PyPy.)
 
 #### Decorator options
 
