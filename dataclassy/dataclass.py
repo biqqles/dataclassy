@@ -7,7 +7,7 @@
  This file contains the internal mechanism that makes data classes
  work, as well as functions which operate on them.
 """
-from types import FunctionType
+from types import FunctionType as Function
 from typing import Any, Dict, Generic, TypeVar
 
 DataClass = Any  # type hint for variables that should be data class instances
@@ -65,7 +65,8 @@ class DataClassMeta(type):
                 del dict_[d]
             del dict_['__slots__']
         if options['init']:
-            dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults, options['kwargs']))
+            dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults,
+                                                      options['kwargs'], options['frozen']))
         if options['repr']:
             dict_.setdefault('__repr__', _generated_repr)
         if options['eq']:
@@ -78,28 +79,35 @@ class DataClassMeta(type):
         return type.__new__(mcs, name, bases, dict_)
 
 
-def _generate_new(class_annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool) -> FunctionType:
+def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool, frozen: bool) -> Function:
     """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
     When the data class is initialised, arguments to this function are applied to the fields of the new instance. Using
     __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation."""
     user_init = '__init__' in defaults
 
-    arguments = [a for a in class_annotations if a not in defaults]
-    default_arguments = [f'{a}={a}' for a in class_annotations if a in defaults]
+    # determine arguments for initialiser
+    arguments = [a for a in annotations if a not in defaults]
+    default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
     args = ['*args'] if user_init else []
     kwargs = ['**kwargs'] if gen_kwargs or user_init else []
 
     parameters = ', '.join(arguments + default_arguments + args + kwargs)
 
-    assignments = [f'object.__setattr__(self, {k!r}, {k}.copy() if hasattr({k}, "copy") else {k})'
-                   for k in class_annotations]
+    # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
+    references = {n: f'{n}.copy() if {n} is self.__defaults__[{n!r}] else {n}'
+                  if n in defaults and hasattr(defaults[n], 'copy') else n for n in annotations}
 
+    # if the class is frozen, use the necessary but slightly slower object.__setattr__
+    assignments = [f'object.__setattr__(self, {n!r}, {r})' if frozen else f'self.{n} = {r}'
+                   for n, r in references.items()]
+
+    # generate the function
     signature = f'def __new__(cls, {parameters}):'
-    statements = [f'self = object.__new__(cls)', *assignments, f'self.__init__({parameters})', 'return self']
+    body = [f'self = object.__new__(cls)', *assignments, f'self.__init__({parameters})', 'return self']
 
-    exec('\n\t'.join([signature, *statements]), {}, defaults)
+    exec('\n\t'.join([signature, *body]), {}, defaults)
     function = defaults.pop('__new__')
-    function.__annotations__ = class_annotations
+    function.__annotations__ = annotations
     return function
 
 
@@ -110,4 +118,4 @@ _generated_eq = lambda self, other: is_dataclass_instance(other) and as_tuple(se
 _generated_iter = lambda self: iter(as_tuple(self))
 _generated_repr = lambda self: f'{self.__class__.__name__}(' \
         f'{", ".join(f"{f}={v!r}" for f, v in fields(self, not self.__dataclass__["hide_internals"]).items())})'
-_generated_attr = lambda *args: exec('raise AttributeError("Frozen class")')
+_generated_attr = lambda self, *args: exec('raise AttributeError("Frozen class")')
