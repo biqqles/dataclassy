@@ -100,7 +100,7 @@ class CustomInit:
 
 When this class is instantiated with `CustomInit(1, 2, 3)`, it gets a new instance attribute `d` which is calculated using the value of the `__init__`-only parameter `c`.
 
-When defining an `__init__`, you *must* ensure that the signature includes, in order, all fields of the class in addition to your init-only parameters, either by explicitly listing them as shown, or by using `*args` and/or `**kwargs` (e.g. ``def __init__(self, *args, c)`. Note however that this syntax makes `c` a  *keyword-only argument*). This prevents ambiguity when initialising the class. Python will enforce this by raising a `RuntimeError` if you do not.
+When defining an `__init__`, you *must* ensure that the signature includes, in order, all fields of the class in addition to your init-only parameters, either by explicitly listing them as shown, or by using `*args` and/or `**kwargs` (e.g. `def __init__(self, *args, c)`. Note however that this syntax makes `c` a  *keyword-only argument*). This prevents ambiguity when initialising the class. Python will enforce this by raising a `RuntimeError` if you do not.
 
 This mechanism performs the roles of dataclasses' `InitVar` and `__post_init__`.
 
