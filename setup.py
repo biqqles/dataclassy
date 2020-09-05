@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='dataclassy',
-    version='0.3',
+    version='0.4',
 
     author='biqqles',
     author_email='biqqles@protonmail.com',
@@ -17,7 +17,7 @@ setup(
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
         'Operating System :: OS Independent',
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
     ],
     python_requires='>=3.6',
 )
