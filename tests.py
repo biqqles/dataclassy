@@ -156,7 +156,7 @@ class Tests(unittest.TestCase):
             a: int
             b: int
 
-            def __init__(self, a, b, c):
+            def __init__(self, c):
                 self.d = (self.a + self.b) / c
 
         custom = CustomInit(1, 2, 3)
