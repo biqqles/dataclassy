@@ -196,6 +196,14 @@ class Tests(unittest.TestCase):
         self.assertEqual(replace(self.b, f=4), self.Beta(1, 2, 4))
         self.assertEqual(self.b, self.Beta(1, 2, 3))  # assert that the original instance remains unchanged
 
+    def test_post_init_warning(self):
+        """Test that the user is warned if a __post_init__ is defined."""
+        with self.assertRaises(TypeError):
+            @dataclass
+            class Deprecated:
+                def __post_init__(self):
+                    pass
+
 
 if __name__ == '__main__':
     unittest.main()

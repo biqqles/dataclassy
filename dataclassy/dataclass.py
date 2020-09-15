@@ -52,6 +52,10 @@ class DataClassMeta(type):
         # delete what will become stale references so that Python creates new ones
         del dict_['__dict__'], dict_['__weakref__']
 
+        # warn the user if they try to use __post_init__
+        if '__post_init__' in dict_:
+            raise TypeError('dataclassy does not use __post_init__. You should rename this method __init__')
+
         # create/apply generated methods and attributes
         if options['slots']:
             # values with default values must only be present in slots, not dict, otherwise Python will interpret them
