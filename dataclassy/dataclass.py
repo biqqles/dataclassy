@@ -93,6 +93,12 @@ class DataClassMeta(type):
         instance.__init__(*args, **kwargs)
         return instance
 
+    @property
+    def __signature__(cls):
+        """Defining a __call__ breaks inspect.signature. Lazily generate a Signature object ourselves."""
+        import inspect
+        return inspect.signature(cls.__new__)  # not completely correct, but most of the way there
+
 
 def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool, frozen: bool) -> Function:
     """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
