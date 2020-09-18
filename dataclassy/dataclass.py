@@ -86,7 +86,7 @@ class DataClassMeta(type):
         """Remove arguments used by __new__ before calling __init__."""
         instance = cls.__new__(cls, *args, **kwargs)
 
-        args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for cls
+        args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for 'cls'
         for parameter in kwargs.keys() & cls.__annotations__.keys():
             del kwargs[parameter]
 
@@ -97,7 +97,8 @@ class DataClassMeta(type):
     def __signature__(cls):
         """Defining a __call__ breaks inspect.signature. Lazily generate a Signature object ourselves."""
         import inspect
-        return inspect.signature(cls.__new__)  # not completely correct, but most of the way there
+        parameters = tuple(inspect.signature(cls.__new__).parameters.values())
+        return inspect.Signature(parameters[1:])  # remove 'cls' to transform parameters of __new__ into those of class
 
 
 def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool, frozen: bool) -> Function:
