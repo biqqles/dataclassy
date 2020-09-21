@@ -52,6 +52,10 @@ class DataClassMeta(type):
         # delete what will become stale references so that Python creates new ones
         del dict_['__dict__'], dict_['__weakref__']
 
+        # warn the user if they try to use __post_init__
+        if '__post_init__' in dict_:
+            raise TypeError('dataclassy does not use __post_init__. You should rename this method __init__')
+
         # create/apply generated methods and attributes
         if options['slots']:
             # values with default values must only be present in slots, not dict, otherwise Python will interpret them
@@ -78,6 +82,24 @@ class DataClassMeta(type):
 
         return type.__new__(mcs, name, bases, dict_)
 
+    def __call__(cls, *args, **kwargs):
+        """Remove arguments used by __new__ before calling __init__."""
+        instance = cls.__new__(cls, *args, **kwargs)
+
+        args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for 'cls'
+        for parameter in kwargs.keys() & cls.__annotations__.keys():
+            del kwargs[parameter]
+
+        instance.__init__(*args, **kwargs)
+        return instance
+
+    @property
+    def __signature__(cls):
+        """Defining a __call__ breaks inspect.signature. Lazily generate a Signature object ourselves."""
+        import inspect
+        parameters = tuple(inspect.signature(cls.__new__).parameters.values())
+        return inspect.Signature(parameters[1:])  # remove 'cls' to transform parameters of __new__ into those of class
+
 
 def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool, frozen: bool) -> Function:
     """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
@@ -88,10 +110,10 @@ def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwa
     # determine arguments for initialiser
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
-    args = ['*args'] if user_init else []
+    args = ['*args'] if user_init else []  # if init is defined, new's arguments must be kw-only to avoid ambiguity
     kwargs = ['**kwargs'] if gen_kwargs or user_init else []
 
-    parameters = ', '.join(arguments + default_arguments + args + kwargs)
+    parameters = ', '.join(arguments + args + default_arguments + kwargs)
 
     # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
     references = {n: f'{n}.copy() if {n} is self.__defaults__[{n!r}] else {n}'

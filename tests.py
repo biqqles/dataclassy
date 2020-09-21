@@ -156,7 +156,7 @@ class Tests(unittest.TestCase):
             a: int
             b: int
 
-            def __init__(self, a, b, c):
+            def __init__(self, c):
                 self.d = (self.a + self.b) / c
 
         custom = CustomInit(1, 2, 3)
@@ -195,6 +195,14 @@ class Tests(unittest.TestCase):
         """Test replace()."""
         self.assertEqual(replace(self.b, f=4), self.Beta(1, 2, 4))
         self.assertEqual(self.b, self.Beta(1, 2, 3))  # assert that the original instance remains unchanged
+
+    def test_post_init_warning(self):
+        """Test that the user is warned if a __post_init__ is defined."""
+        with self.assertRaises(TypeError):
+            @dataclass
+            class Deprecated:
+                def __post_init__(self):
+                    pass
 
 
 if __name__ == '__main__':
