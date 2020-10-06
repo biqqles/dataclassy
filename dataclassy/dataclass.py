@@ -72,13 +72,13 @@ class DataClassMeta(type):
             dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults,
                                                       options['kwargs'], options['frozen']))
         if options['repr']:
-            dict_.setdefault('__repr__', _generated_repr)
+            dict_.setdefault('__repr__', __repr__)
         if options['eq']:
-            dict_.setdefault('__eq__', _generated_eq)
+            dict_.setdefault('__eq__', __eq__)
         if options['iter']:
-            dict_.setdefault('__iter__', _generated_iter)
+            dict_.setdefault('__iter__', __iter__)
         if options['frozen']:
-            dict_['__delattr__'] = dict_['__setattr__'] = _generated_attr
+            dict_['__delattr__'] = dict_['__setattr__'] = __setattr__
 
         return type.__new__(mcs, name, bases, dict_)
 
@@ -133,11 +133,22 @@ def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwa
     return function
 
 
-# method implementations which are constant for all data classes
+# generic method implementations common to all data classes
 from .functions import fields, as_tuple, is_dataclass_instance
 
-_generated_eq = lambda self, other: is_dataclass_instance(other) and as_tuple(self) == as_tuple(other)
-_generated_iter = lambda self: iter(as_tuple(self))
-_generated_repr = lambda self: f'{self.__class__.__name__}(' \
-        f'{", ".join(f"{f}={v!r}" for f, v in fields(self, not self.__dataclass__["hide_internals"]).items())})'
-_generated_attr = lambda self, *args: exec('raise AttributeError("Frozen class")')
+
+def __eq__(self: DataClass, other: DataClass):
+    return is_dataclass_instance(other) and as_tuple(self) == as_tuple(other)
+
+
+def __iter__(self: DataClass):
+    return iter(as_tuple(self))
+
+
+def __repr__(self):
+    show_internals = not self.__dataclass__['hide_internals']
+    return f'{self.__class__.__name__}({", ".join(f"{f}={v!r}" for f, v in fields(self, show_internals).items())})'
+
+
+def __setattr__(self: DataClass, *args):
+    raise AttributeError('Frozen class')
