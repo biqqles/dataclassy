@@ -134,11 +134,11 @@ def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwa
 
 
 # generic method implementations common to all data classes
-from .functions import fields, as_tuple, is_dataclass_instance
+from .functions import fields, as_tuple
 
 
 def __eq__(self: DataClass, other: DataClass):
-    return is_dataclass_instance(other) and as_tuple(self) == as_tuple(other)
+    return type(self) is type(other) and as_tuple(self) == as_tuple(other)
 
 
 def __iter__(self: DataClass):
@@ -147,7 +147,7 @@ def __iter__(self: DataClass):
 
 def __repr__(self):
     show_internals = not self.__dataclass__['hide_internals']
-    return f'{self.__class__.__name__}({", ".join(f"{f}={v!r}" for f, v in fields(self, show_internals).items())})'
+    return f'{type(self).__name__}({", ".join(f"{f}={v!r}" for f, v in fields(self, show_internals).items())})'
 
 
 def __setattr__(self: DataClass, *args):
