@@ -148,7 +148,7 @@ class CustomInit2:
 
 ## API
 ### Decorator
-#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True)`
+#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True, meta=DataClassMeta)`
 The decorator used to signify that a class definition should become a data class. The decorator returns a new data class with generated methods as detailed below. If the class already defines a particular method, it will not be replaced with a generated one.
 
 Without arguments, its behaviour is, superficially, almost identical to its equivalent in the built-in module. However, dataclassy's decorator only needs to be applied once, and all subclasses will become data classes with the same parameters. The decorator can still be reapplied to subclasses in order to change parameters.
@@ -190,6 +190,9 @@ If true, data class instances are nominally immutable: fields cannot be overwrit
 
 ##### `hide_internals`
 If true (the default), [internal fields](#internal) are not included in the generated `__repr__`.
+
+##### `meta`
+Set this parameter to use a metaclass other than dataclassy's own. This metaclass must subclass [`DataClassMeta`](dataclassy/dataclass.py).
 
 
 ### Functions

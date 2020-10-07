@@ -65,6 +65,11 @@ class Tests(unittest.TestCase):
         with self.assertRaises(TypeError):
             dataclass(1)
 
+        with self.assertRaises(AssertionError):
+            @dataclass(meta=int)
+            class Dummy:
+                pass
+
     def test_readme(self):
         """Test all examples from the project readme."""
         @dataclass  # with default parameters

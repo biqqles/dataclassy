@@ -10,16 +10,18 @@ from typing import Any, Dict, Optional
 from .dataclass import DataClassMeta
 
 
-def dataclass(cls: Optional[type] = None, **options):
-    """The decorator used to apply DataClassMeta to a class."""
-    def apply_metaclass(to_class, metaclass=DataClassMeta):
+def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options):
+    """The decorator used to apply DataClassMeta, or optionally a subclass of that metaclass, to a class."""
+    assert issubclass(meta, DataClassMeta)
+
+    def apply_metaclass(to_class, metaclass=meta):
         """Apply a metaclass to a class."""
         dict_ = dict(vars(to_class), __metaclass__=metaclass)
         return metaclass(to_class.__name__, to_class.__bases__, dict_, **options)
 
     if cls:  # if decorator used with no arguments, apply metaclass to the class immediately
         if not isinstance(cls, type):
-            raise TypeError('This decorator takes no positional arguments')
+            raise TypeError('This decorator takes no explicit positional arguments')
         return apply_metaclass(cls)
     return apply_metaclass  # otherwise, return function for later evaluation
 
