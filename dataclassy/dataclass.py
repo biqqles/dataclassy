@@ -26,7 +26,7 @@ class Internal(Generic[T]):
 class DataClassMeta(type):
     """The metaclass for a data class."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False,
-                           hide_internals=True)
+                           order=False, hide_internals=True)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         # collect annotations, defaults, slots and options from this class' ancestors, in definition order
@@ -79,6 +79,8 @@ class DataClassMeta(type):
             dict_.setdefault('__iter__', __iter__)
         if options['frozen']:
             dict_['__delattr__'] = dict_['__setattr__'] = __setattr__
+        if options['order']:
+            dict_.setdefault('__lt__', __lt__)
 
         return type.__new__(mcs, name, bases, dict_)
 
@@ -141,13 +143,20 @@ def __eq__(self: DataClass, other: DataClass):
     return type(self) is type(other) and as_tuple(self) == as_tuple(other)
 
 
+def __lt__(self: DataClass, other: DataClass):
+    if isinstance(other, type(self)):
+        return as_tuple(self) < as_tuple(other)
+    return NotImplemented
+
+
 def __iter__(self: DataClass):
     return iter(as_tuple(self))
 
 
 def __repr__(self):
     show_internals = not self.__dataclass__['hide_internals']
-    return f'{type(self).__name__}({", ".join(f"{f}={v!r}" for f, v in fields(self, show_internals).items())})'
+    field_values = ', '.join(f'{f}={v!r}' for f, v in fields(self, show_internals).items())
+    return f'{type(self).__name__}({field_values})'
 
 
 def __setattr__(self: DataClass, *args):

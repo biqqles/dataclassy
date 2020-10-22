@@ -20,11 +20,11 @@ Data classes from **dataclassy** offer the following advantages over those from 
 
 In addition, dataclassy:
 
+- Is tiny (around 150 lines of code!)
 - Has no dependencies
 - Supports Python 3.6 and up
 - Has 100% test coverage
 
-All in a tiny, tidy codebase that's a fraction of the size of Python's dataclasses or other alternatives like attrs.
 
 ## Usage
 ### Installation
@@ -71,15 +71,20 @@ dataclassy has several important differences from dataclasses, mainly reflective
 |*class variables*                |fields with type `ClassVar`                 |fields without type annotation          |
 |*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
 |*field excluded from `repr`*     |`field(repr=False)`                         |`Internal` type wrapper or `_name`      |
-|*inheritance*                    |decorator must be applied to every subclass |decorator and options are inherited     |
-|*field ordering*         |fields with defaults must follow those without them |ordering is unrestricted                |
 
 There are a couple of minor differences, too:
 
 - `fields` returns `Dict[str, Type]` instead of `Dict[Field, Type]` and has an additional parameter which filters internal fields
 - Attempting to modify a frozen instance raises `AttributeError` with an explanation rather than `FrozenInstanceError`
+- `order=True` causes only a `__lt__` method to be generated as this is all that is required for collections to be *orderable*. `>` is also implicitly implemented through operator reflection. If you need other comparison operators, apply [`@functools.total_ordering`](https://docs.python.org/3/library/functools.html#functools.total_ordering) on the dataclass
+
+Finally, there are some quality of life improvements that, while not being directly implicated in migration, will allow you to make your code cleaner:
+
+- `@dataclass` does not need to be applied to every subclass - its behaviour and options are inherited
+- Unlike dataclasses, fields with defaults do not need to follow those without them. This is particularly useful when working with subclasses, which is almost impossible with dataclasses
 - dataclassy adds a `DataClass` type annotation to represent variables that should be data class instances
 - dataclassy has the `is_dataclass_instance` suggested as a [recipe](https://docs.python.org/3/library/dataclasses.html#dataclasses.is_dataclass) for dataclasses built-in
+- The generated `__lt__` method is compatible with supertypes and subtypes of the class. This means that, if `functools.total_ordering` is applied, heterogeneous collections of instances with the same superclass can be sorted
 
 
 ### Examples
@@ -187,6 +192,9 @@ If true, generate a [`__slots__`](https://docs.python.org/3/reference/datamodel.
 
 ##### `frozen`
 If true, data class instances are nominally immutable: fields cannot be overwritten or deleted after initialisation in `__init__`. Attempting to do so will raise an `AttributeError`.
+
+##### `order`
+If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable* and comparable with the `<` operator (as well as `>` if `eq` is also set to true). Apply `@functools.total_ordering` on top of `@dataclass` if other comparison operators are required. The generated method compares this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass) (the normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply).
 
 ##### `hide_internals`
 If true (the default), [internal fields](#internal) are not included in the generated `__repr__`.
