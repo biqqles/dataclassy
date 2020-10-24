@@ -88,11 +88,13 @@ class DataClassMeta(type):
         """Remove arguments used by __new__ before calling __init__."""
         instance = cls.__new__(cls, *args, **kwargs)
 
-        args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for 'cls'
-        for parameter in kwargs.keys() & cls.__annotations__.keys():
-            del kwargs[parameter]
+        if type(cls.__init__) is Function:  # if __init__ is explicitly defined
+            args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for 'cls'
+            for parameter in kwargs.keys() & cls.__annotations__.keys():
+                del kwargs[parameter]
 
-        instance.__init__(*args, **kwargs)
+            instance.__init__(*args, **kwargs)
+
         return instance
 
     @property
