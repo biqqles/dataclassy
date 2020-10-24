@@ -13,12 +13,12 @@ from .dataclass import DataClassMeta, DataClass, Internal
 
 def is_dataclass(obj: Any) -> bool:
     """Return True if the given object is a data class as implemented in this package, otherwise False."""
-    return getattr(obj, '__metaclass__', None) is DataClassMeta
+    return isinstance(obj, DataClassMeta) or is_dataclass_instance(obj)
 
 
 def is_dataclass_instance(obj: Any) -> bool:
     """Return True if the given object is an instance of a data class, otherwise False."""
-    return is_dataclass(obj) and type(obj) is not DataClassMeta
+    return isinstance(type(obj), DataClassMeta)
 
 
 def fields(dataclass: DataClass, internals=False) -> Dict[str, Any]:

@@ -57,6 +57,8 @@ class DataClassMeta(type):
             raise TypeError('dataclassy does not use __post_init__. You should rename this method __init__')
 
         # create/apply generated methods and attributes
+        user_init = type(dict_.get('__init__')) is Function
+
         if options['slots']:
             # values with default values must only be present in slots, not dict, otherwise Python will interpret them
             # as read only
@@ -69,7 +71,7 @@ class DataClassMeta(type):
                 del dict_[d]
             del dict_['__slots__']
         if options['init']:
-            dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults,
+            dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults, user_init,
                                                       options['kwargs'], options['frozen']))
         if options['repr']:
             dict_.setdefault('__repr__', __repr__)
@@ -82,19 +84,19 @@ class DataClassMeta(type):
         if options['order']:
             dict_.setdefault('__lt__', __lt__)
 
-        return type.__new__(mcs, name, bases, dict_)
+        return type.__new__(mcs if not user_init else DataClassInit, name, bases, dict_)
 
+
+class DataClassInit(DataClassMeta):
+    """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
     def __call__(cls, *args, **kwargs):
-        """Remove arguments used by __new__ before calling __init__."""
         instance = cls.__new__(cls, *args, **kwargs)
 
-        if type(cls.__init__) is Function:  # if __init__ is explicitly defined
-            args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for 'cls'
-            for parameter in kwargs.keys() & cls.__annotations__.keys():
-                del kwargs[parameter]
+        args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for 'cls'
+        for parameter in kwargs.keys() & cls.__annotations__.keys():
+            del kwargs[parameter]
 
-            instance.__init__(*args, **kwargs)
-
+        instance.__init__(*args, **kwargs)
         return instance
 
     @property
@@ -105,13 +107,10 @@ class DataClassMeta(type):
         return inspect.Signature(parameters[1:])  # remove 'cls' to transform parameters of __new__ into those of class
 
 
-def _generate_new(annotations: Dict[str, Any], defaults: Dict[str, Any], gen_kwargs: bool, frozen: bool) -> Function:
+def _generate_new(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
     """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
     When the data class is initialised, arguments to this function are applied to the fields of the new instance. Using
     __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation."""
-    user_init = '__init__' in defaults
-
-    # determine arguments for initialiser
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
     args = ['*args'] if user_init else []  # if init is defined, new's arguments must be kw-only to avoid ambiguity
@@ -151,7 +150,7 @@ def __lt__(self: DataClass, other: DataClass):
     return NotImplemented
 
 
-def __iter__(self: DataClass):
+def __iter__(self):
     return iter(as_tuple(self))
 
 
@@ -161,5 +160,5 @@ def __repr__(self):
     return f'{type(self).__name__}({field_values})'
 
 
-def __setattr__(self: DataClass, *args):
+def __setattr__(self, *args):
     raise AttributeError('Frozen class')
