@@ -93,6 +93,11 @@ class DataClassMeta(type):
             from functools import total_ordering
             total_ordering(cls)
 
+        # determine a static expression for an instance's fields as a tuple, then evaluate this to create a property
+        # allowing efficient representation for internal methods
+        tuple_expr = f'({", ".join((*(f"self.{f}" for f in fields(cls)), ""))})'  # "" ensures closing comma
+        cls.__tuple__ = property(eval(f'lambda self: {tuple_expr}'))
+
 
 class DataClassInit(DataClassMeta):
     """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
@@ -145,25 +150,26 @@ def _generate_new(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
 
 # generic method implementations common to all data classes
 # these are currently relatively inefficient - it would be better to cache an expression for a class' tuple
-from .functions import values, as_tuple
+from .functions import values, fields
 
 
 def __eq__(self: DataClass, other: DataClass):
-    return type(self) is type(other) and as_tuple(self) == as_tuple(other)
+    return type(self) is type(other) and self.__tuple__ == other.__tuple__
 
 
 def __lt__(self: DataClass, other: DataClass):
     if isinstance(other, type(self)):
-        return as_tuple(self) < as_tuple(other)
+        return self.__tuple__ < other.__tuple__
     return NotImplemented
 
 
 def __hash__(self):
-    return hash((type(self), *(v for v in as_tuple(self) if v is isinstance(v, Hashable))))
+    # currently not ideal since gives no warning if a field expected to be hashable is not
+    return hash((type(self), *(v for v in self.__tuple__ if v is isinstance(v, Hashable))))
 
 
 def __iter__(self):
-    return iter(as_tuple(self))
+    return iter(self.__tuple__)
 
 
 def __repr__(self):
