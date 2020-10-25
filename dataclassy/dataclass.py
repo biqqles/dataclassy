@@ -8,7 +8,7 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType as Function
-from typing import Any, Dict, Generic, TypeVar
+from typing import Any, Dict, Generic, Hashable, TypeVar
 
 DataClass = Any  # type hint for variables that should be data class instances
 T = TypeVar('T')
@@ -26,7 +26,7 @@ class Internal(Generic[T]):
 class DataClassMeta(type):
     """The metaclass for a data class."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False,
-                           order=False, hide_internals=True)
+                           order=False, unsafe_hash=True, hide_internals=True)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         # collect annotations, defaults, slots and options from this class' ancestors, in definition order
@@ -79,6 +79,8 @@ class DataClassMeta(type):
             dict_['__delattr__'] = dict_['__setattr__'] = __setattr__
         if options['order']:
             dict_.setdefault('__lt__', __lt__)
+        if (options['eq'] and options['frozen']) or options['unsafe_hash']:
+            dict_.setdefault('__hash__', __hash__)
 
         return type.__new__(mcs if not user_init else DataClassInit, name, bases, dict_)
 
@@ -142,6 +144,7 @@ def _generate_new(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
 
 
 # generic method implementations common to all data classes
+# these are currently relatively inefficient - it would be better to cache an expression for a class' tuple
 from .functions import values, as_tuple
 
 
@@ -153,6 +156,10 @@ def __lt__(self: DataClass, other: DataClass):
     if isinstance(other, type(self)):
         return as_tuple(self) < as_tuple(other)
     return NotImplemented
+
+
+def __hash__(self):
+    return hash((type(self), *(v for v in as_tuple(self) if v is isinstance(v, Hashable))))
 
 
 def __iter__(self):

@@ -132,6 +132,21 @@ class Tests(unittest.TestCase):
         with self.assertRaises(TypeError):  # test absence of total_ordering if eq is false
             PartiallyOrderable() >= PartiallyOrderable()
 
+    def test_hashable(self):
+        """Test correct generation of a __hash__ method."""
+        @dataclass(eq=True, frozen=True)
+        class Hashable:
+            a: int
+            b: List[int] = [2]
+
+        @dataclass(unsafe_hash=True)
+        class AlsoHashable:
+            c: int
+
+        self.assertFalse(hash(Hashable(1)) == hash(AlsoHashable(1)))
+        d = {Hashable(1): 1, Hashable(2): 2, AlsoHashable(1): 3}
+        self.assertEqual(d[Hashable(1)], 1)
+
     def test_slots(self):
         """Test correct generation and efficacy of a __slots__ attribute."""
         self.assertTrue(hasattr(self.b, '__slots__'))
