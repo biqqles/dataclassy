@@ -20,7 +20,7 @@ Data classes from **dataclassy** offer the following advantages over those from 
 
 In addition, dataclassy:
 
-- Is tiny (around 150 lines of code!) with no heavy imports
+- Is tiny (around 150 lines of code!)
 - Has no dependencies
 - Supports Python 3.6 and up
 - Has 100% test coverage
@@ -54,14 +54,12 @@ to
 from dataclassy import dataclass
 ```
 
-This being said, there *are* differences.  dataclassy does not try to be a "clone" of dataclasses, but rather an alternative, feature-complete implementation of the concept that still remains familiar for those acquainted with the module in the standard library. Minimalism takes precedence over compatibility.
-
-Read on to learn the similarities and differences between the two modules. 
+This being said, there *are* differences.  dataclassy does not try to be a "clone" of dataclasses, but rather an alternative, feature-complete implementation of the concept with its own design philosophy, yet one that remains highly familiar to those acquainted with the module in the standard library. Minimalism takes precedence over compatibility.
 
 #### Similarities
 dataclassy's `dataclass` decorator takes all of the same arguments (plus its own) as dataclasses' (with the exception of `unsafe_hash` which is awaiting implementation) and should therefore be a drop-in replacement.
 
-dataclassy also implements all dataclasses' [functions](#functions): `is_dataclass`, `fields`, `replace`, `make_dataclass`, `asdict` and `astuple` (the last two are aliased from `as_dict` and `as_tuple` respectively).
+dataclassy also implements all dataclasses' [functions](#functions): `is_dataclass`, `fields`, `replace`, `make_dataclass`, `asdict` and `astuple` (the last two are aliased from `as_dict` and `as_tuple` respectively), and they should work as you expect.
 
 #### Differences
 dataclassy has several important differences from dataclasses, mainly reflective of its minimalistic style and implementation. These differences are enumerated below and fully expanded on in the next section.
@@ -212,9 +210,12 @@ Returns True if `obj` is a data class as implemented in this module.
 Returns True if `obj` is an instance of a data class as implemented in this module.
 
 #### `fields(dataclass, internals=False)`
-Return a dict of `dataclass`'s fields and their values. `internals` selects whether to include internal fields.
+Return a dict of `dataclass`'s fields and their types. `internals` selects whether to include internal fields. `dataclass` can be either a data class or an instance of a data class.
 
-A field is defined as a class-level variable with a [type annotation](https://docs.python.org/3/glossary.html#term-variable-annotation). This means that class variables and constants are not fields, assuming they do not have annotations as indicated above.
+A field is defined as a class-level variable with a [type annotation](https://docs.python.org/3/glossary.html#term-variable-annotation). Variables defined in the class without type annotations are completely excluded from dataclassy's consideration. Class variables and constants can therefore be indicated by the absence of type annotations.
+
+#### `values(dataclass, internals=False)`
+Return a dict of `dataclass`'s fields and their values. `internals` selects whether to include internal fields. `dataclass` must be an instance of a data class.
 
 #### `as_dict(dataclass dict_factory=dict)`
 Recursively create a dict of a dataclass instance's fields and their values.

@@ -142,7 +142,7 @@ def _generate_new(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
 
 
 # generic method implementations common to all data classes
-from .functions import fields, as_tuple
+from .functions import values, as_tuple
 
 
 def __eq__(self: DataClass, other: DataClass):
@@ -161,7 +161,7 @@ def __iter__(self):
 
 def __repr__(self):
     show_internals = not self.__dataclass__['hide_internals']
-    field_values = ', '.join(f'{f}={v!r}' for f, v in fields(self, show_internals).items())
+    field_values = ', '.join(f'{f}={v!r}' for f, v in values(self, show_internals).items())
     return f'{type(self).__name__}({field_values})'
 
 

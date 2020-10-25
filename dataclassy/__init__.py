@@ -6,7 +6,7 @@
 """
 from .decorator import dataclass, make_dataclass
 from .dataclass import DataClass, Internal
-from .functions import fields, as_dict, as_tuple, replace
+from .functions import fields, values, as_dict, as_tuple, replace
 
 # aliases intended for migration from dataclasses
 asdict, astuple = as_dict, as_tuple

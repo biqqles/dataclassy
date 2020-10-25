@@ -12,7 +12,7 @@ from collections import namedtuple
 from inspect import signature
 from sys import getsizeof
 
-from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, Internal, replace
+from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
 
 
 class Tests(unittest.TestCase):
@@ -205,8 +205,15 @@ class Tests(unittest.TestCase):
 
     def test_fields(self):
         """Test fields()."""
-        self.assertEqual(repr(fields(self.e)), "{'g': NT(x=1, y=2, z=3), 'h': [Epsilon(g=4, h=5)]}")
-        self.assertEqual(repr(fields(self.e, True)), "{'g': NT(x=1, y=2, z=3), 'h': [Epsilon(g=4, h=5)], '_i': 0}")
+        self.assertEqual(repr(fields(self.e)),
+                         "{'g': typing.Tuple[tests.NT], 'h': typing.List[ForwardRef('Epsilon')]}")
+        self.assertEqual(repr(fields(self.e, True)),
+                         "{'g': typing.Tuple[tests.NT], 'h': typing.List[ForwardRef('Epsilon')], '_i': <class 'int'>}")
+
+    def test_values(self):
+        """Test values()."""
+        self.assertEqual(repr(values(self.e)), "{'g': NT(x=1, y=2, z=3), 'h': [Epsilon(g=4, h=5)]}")
+        self.assertEqual(repr(values(self.e, True)), "{'g': NT(x=1, y=2, z=3), 'h': [Epsilon(g=4, h=5)], '_i': 0}")
 
     def test_as_tuple(self):
         """Test as_tuple()."""

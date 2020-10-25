@@ -6,7 +6,7 @@
 
  This file defines functions which operate on data classes.
 """
-from typing import Any, Callable, Dict, Tuple
+from typing import Any, Callable, Dict, Tuple, Type
 
 from .dataclass import DataClassMeta, DataClass, Internal
 
@@ -21,11 +21,20 @@ def is_dataclass_instance(obj: Any) -> bool:
     return isinstance(type(obj), DataClassMeta)
 
 
-def fields(dataclass: DataClass, internals=False) -> Dict[str, Any]:
+def fields(dataclass: DataClass, internals=False) -> Dict[str, Type]:
+    """Return a dict of `dataclass`'s fields and their types. `internals` selects whether to include internal fields.
+    `dataclass` can be either a data class or an instance of a data class. A field is defined as a class-level variable
+    with a type annotation."""
+    assert is_dataclass(dataclass)
+    return _filter_annotations(dataclass.__annotations__, internals)
+
+
+def values(dataclass: DataClass, internals=False) -> Dict[str, Any]:
     """Return a dict of `dataclass`'s fields and their values. `internals` selects whether to include internal fields.
-    A field is defined as a class-level variable with a type annotation."""
+    `dataclass` must be an instance of a data class. A field is defined as a class-level variable with a type
+    annotation."""
     assert is_dataclass_instance(dataclass)
-    return {f: getattr(dataclass, f) for f in _filter_annotations(dataclass.__annotations__, internals)}
+    return {f: getattr(dataclass, f) for f in fields(dataclass, internals)}
 
 
 def as_dict(dataclass: DataClass, dict_factory=dict) -> Dict[str, Any]:
@@ -44,10 +53,10 @@ def as_tuple(dataclass: DataClass) -> Tuple:
 
 def replace(dataclass: DataClass, **changes) -> DataClass:
     """Return a new copy of `dataclass` with field values replaced as specified in `changes`."""
-    return type(dataclass)(**dict(fields(dataclass, internals=True), **changes))
+    return type(dataclass)(**dict(values(dataclass, internals=True), **changes))
 
 
-def _filter_annotations(annotations: Dict[str, Any], internals: bool) -> Dict[str, Any]:
+def _filter_annotations(annotations: Dict[str, Type], internals: bool) -> Dict[str, Type]:
     """Filter an annotations dict for to remove or keep internal fields."""
     return annotations if internals else {f: a for f, a in annotations.items()
                                           if not f.startswith('_') and not Internal.is_internal(a)}
@@ -57,7 +66,7 @@ def _recurse_structure(var: Any, iter_proc: Callable) -> Any:
     """Recursively convert an arbitrarily nested structure beginning at `var`, copying and processing any iterables
     encountered with `iter_proc`."""
     if is_dataclass(var):
-        var = fields(var, internals=True)
+        var = values(var, internals=True)
     if hasattr(var, '_asdict'):  # handle named tuples
         # noinspection PyCallingNonCallable, PyProtectedMember
         var = var._asdict()
