@@ -20,7 +20,7 @@ Data classes from **dataclassy** offer the following advantages over those from 
 
 In addition, dataclassy:
 
-- Is tiny (around 150 lines of code!)
+- Is tiny (around 150 lines of code!) with no heavy imports
 - Has no dependencies
 - Supports Python 3.6 and up
 - Has 100% test coverage
@@ -42,7 +42,7 @@ pip install https://github.com/biqqles/dataclassy/archive/master.zip -U
 
 
 ### Migration
-If you simply use the decorator and other functions, it is possible to instantly migrate from dataclasses to dataclassy by simply changing
+By and large, dataclassy is a drop-in replacement for dataclasses. If you simply use the decorator and other functions, it is possible to instantly migrate from dataclasses to dataclassy by simply changing
 
 ```Python
 from dataclasses import dataclass
@@ -54,10 +54,12 @@ to
 from dataclassy import dataclass
 ```
 
-Otherwise, read on to learn the similarities and differences between the two modules. dataclassy does not seek to be a "clone" of dataclasses, but rather an alternative implementation of the concept that still remains familiar for those acquainted with the module in the standard library.
+This being said, there *are* differences.  dataclassy does not try to be a "clone" of dataclasses, but rather an alternative, feature-complete implementation of the concept that still remains familiar for those acquainted with the module in the standard library. Minimalism takes precedence over compatibility.
+
+Read on to learn the similarities and differences between the two modules. 
 
 #### Similarities
-dataclassy's `dataclass` decorator takes all of the same arguments as dataclasses' (with the exception of `order` and `unsafe_hash` which are awaiting implementation), plus its own, and should therefore be a drop-in replacement.
+dataclassy's `dataclass` decorator takes all of the same arguments (plus its own) as dataclasses' (with the exception of `unsafe_hash` which is awaiting implementation) and should therefore be a drop-in replacement.
 
 dataclassy also implements all dataclasses' [functions](#functions): `is_dataclass`, `fields`, `replace`, `make_dataclass`, `asdict` and `astuple` (the last two are aliased from `as_dict` and `as_tuple` respectively).
 
@@ -76,7 +78,6 @@ There are a couple of minor differences, too:
 
 - `fields` returns `Dict[str, Type]` instead of `Dict[Field, Type]` and has an additional parameter which filters internal fields
 - Attempting to modify a frozen instance raises `AttributeError` with an explanation rather than `FrozenInstanceError`
-- `order=True` causes only a `__lt__` method to be generated as this is all that is required for collections to be *orderable*. `>` is also implicitly implemented through operator reflection. If you need other comparison operators, apply [`@functools.total_ordering`](https://docs.python.org/3/library/functools.html#functools.total_ordering) on the dataclass
 
 Finally, there are some quality of life improvements that, while not being directly implicated in migration, will allow you to make your code cleaner:
 
@@ -84,7 +85,7 @@ Finally, there are some quality of life improvements that, while not being direc
 - Unlike dataclasses, fields with defaults do not need to follow those without them. This is particularly useful when working with subclasses, which is almost impossible with dataclasses
 - dataclassy adds a `DataClass` type annotation to represent variables that should be data class instances
 - dataclassy has the `is_dataclass_instance` suggested as a [recipe](https://docs.python.org/3/library/dataclasses.html#dataclasses.is_dataclass) for dataclasses built-in
-- The generated `__lt__` method is compatible with supertypes and subtypes of the class. This means that, if `functools.total_ordering` is applied, heterogeneous collections of instances with the same superclass can be sorted
+- The generated comparison methods (when `order=True`) are compatible with supertypes and subtypes of the class. This means that heterogeneous collections of instances with the same superclass can be sorted
 
 
 ### Examples
@@ -194,7 +195,7 @@ If true, generate a [`__slots__`](https://docs.python.org/3/reference/datamodel.
 If true, data class instances are nominally immutable: fields cannot be overwritten or deleted after initialisation in `__init__`. Attempting to do so will raise an `AttributeError`.
 
 ##### `order`
-If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable* and comparable with the `<` operator (as well as `>` if `eq` is also set to true). Apply `@functools.total_ordering` on top of `@dataclass` if other comparison operators are required. The generated method compares this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass) (the normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply).
+If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable*. If `eq` is also true, all other comparison methods are also generated. These methods compare this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass). The normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply.
 
 ##### `hide_internals`
 If true (the default), [internal fields](#internal) are not included in the generated `__repr__`.
@@ -240,4 +241,4 @@ Use this type hint to indicate that a variable, parameter or field should be a g
 
 
 ### To be added
-- The missing decorator options from dataclasses: `order=False` and `unsafe_hash=False`.
+- Generation of `__hash__` and the option `unsafe_hash=False`.

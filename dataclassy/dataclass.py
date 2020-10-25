@@ -52,10 +52,6 @@ class DataClassMeta(type):
         # delete what will become stale references so that Python creates new ones
         del dict_['__dict__'], dict_['__weakref__']
 
-        # warn the user if they try to use __post_init__
-        if '__post_init__' in dict_:
-            raise TypeError('dataclassy does not use __post_init__. You should rename this method __init__')
-
         # create/apply generated methods and attributes
         user_init = type(dict_.get('__init__')) is Function
 
@@ -85,6 +81,15 @@ class DataClassMeta(type):
             dict_.setdefault('__lt__', __lt__)
 
         return type.__new__(mcs if not user_init else DataClassInit, name, bases, dict_)
+
+    def __init__(cls, *args, **kwargs):
+        # warn the user if they try to use __post_init__
+        if hasattr(cls, '__post_init__'):
+            raise TypeError('dataclassy does not use __post_init__. You should rename this method __init__')
+
+        if cls.__dataclass__['eq'] and cls.__dataclass__['order']:
+            from functools import total_ordering
+            total_ordering(cls)
 
 
 class DataClassInit(DataClassMeta):

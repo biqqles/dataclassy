@@ -9,7 +9,6 @@
 from typing import Dict, List, Tuple
 import unittest
 from collections import namedtuple
-import functools
 from inspect import signature
 from sys import getsizeof
 
@@ -109,7 +108,7 @@ class Tests(unittest.TestCase):
         self.assertNotEqual(self.b, [0])  # test comparisons with non-dataclasses
 
     def test_order(self):
-        """Test correct generation of an __lt__ method."""
+        """Test correct generation of comparison methods."""
         @dataclass(order=True)
         class Orderable:
             a: int
@@ -118,20 +117,20 @@ class Tests(unittest.TestCase):
         class OrderableSubclass(Orderable):
             c: int = 0
 
-        @functools.total_ordering  # test example of total_ordering use
-        class TotalOrdering(Orderable):
-            pass
-
-        class TotalSubclass(TotalOrdering):
+        @dataclass(eq=False, order=True)
+        class PartiallyOrderable:
             pass
 
         self.assertTrue(Orderable(1, 2) < Orderable(1, 3))
-        self.assertTrue(Orderable(1, 3) > Orderable(1, 2))  # test operator reflection
+        self.assertTrue(Orderable(1, 3) > Orderable(1, 2))
         self.assertTrue(Orderable(1, 2) < OrderableSubclass(1, 3))  # subclasses are comparable
-        self.assertTrue(TotalOrdering(1, 3) >= TotalOrdering(1, 2))
+        self.assertTrue(OrderableSubclass(1, 3) >= OrderableSubclass(1, 2))
 
-        self.assertEqual(sorted([TotalOrdering(1, 2), TotalSubclass(1, 3), TotalOrdering(0, 0)]),
-                         [TotalOrdering(0, 0), TotalOrdering(1, 2), TotalSubclass(1, 3)])
+        self.assertEqual(sorted([Orderable(1, 2), OrderableSubclass(1, 3), Orderable(0, 0)]),
+                         [Orderable(0, 0), Orderable(1, 2), OrderableSubclass(1, 3)])
+
+        with self.assertRaises(TypeError):  # test absence of total_ordering if eq is false
+            PartiallyOrderable() >= PartiallyOrderable()
 
     def test_slots(self):
         """Test correct generation and efficacy of a __slots__ attribute."""
