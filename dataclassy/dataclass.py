@@ -104,7 +104,7 @@ class DataClassInit(DataClassMeta):
     def __call__(cls, *args, **kwargs):
         instance = cls.__new__(cls, *args, **kwargs)
 
-        args = args[cls.__new__.__code__.co_argcount - 1:]  # -1 for 'cls'
+        args = args[len(cls.__annotations__):]
         for parameter in kwargs.keys() & cls.__annotations__.keys():
             del kwargs[parameter]
 
