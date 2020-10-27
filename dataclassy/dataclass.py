@@ -102,9 +102,10 @@ class DataClassMeta(type):
 class DataClassInit(DataClassMeta):
     """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
     def __call__(cls, *args, **kwargs):
-        instance = cls.__new__(cls, *args, **kwargs)
+        args = iter(args)
+        new_kwargs = dict(zip(cls.__annotations__, args))  # convert positional args to keyword for __new__
+        instance = cls.__new__(cls, **new_kwargs, **kwargs)
 
-        args = args[len(cls.__annotations__):]
         for parameter in kwargs.keys() & cls.__annotations__.keys():
             del kwargs[parameter]
 
@@ -122,13 +123,17 @@ class DataClassInit(DataClassMeta):
 def _generate_new(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
     """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
     When the data class is initialised, arguments to this function are applied to the fields of the new instance. Using
-    __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation."""
+    __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation.
+
+    If __init__ is defined, all arguments to __new__ become keyword-only, and the custom __call__ converts positional
+    arguments to keyword arguments. This prevents ambiguity during attempts to pass the same argument twice,
+    positionally and as a keyword."""
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
-    args = ['*args'] if user_init else []  # if init is defined, new's arguments must be kw-only to avoid ambiguity
-    kwargs = ['**kwargs'] if gen_kwargs or user_init else []
+    kw_only = ['*'] if user_init and (arguments or default_arguments) else []
+    kwargs = ['**kwargs'] if gen_kwargs or user_init else []  # pass through unknown keyword arguments to __init__
 
-    parameters = ', '.join(arguments + args + default_arguments + kwargs)
+    parameters = ', '.join(kw_only + arguments + default_arguments + kwargs)
 
     # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
     references = {n: f'{n}.copy() if {n} is self.__defaults__[{n!r}] else {n}'
