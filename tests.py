@@ -218,6 +218,33 @@ class Tests(unittest.TestCase):
         custom_kwargs = CustomInitKwargs(1, 2, c=3)
         self.assertEqual(custom_kwargs.c, {'c': 3})
 
+        @dataclass
+        class Issue6:
+            path: int = 1
+
+            def __init__(self):
+                pass
+
+        Issue6(3)  # previously broken (see issue #6)
+        with self.assertRaises(TypeError):  # previously broken (see issue #7)
+            Issue6(3, a=2)
+
+        @dataclass
+        class Empty:  # test class with no fields but init args
+            def __init__(self, a):
+                pass
+
+        Empty(0)
+
+        @dataclass
+        class SameNameArgs(Issue6):  # show that there is no issue with init args of the same name as fields
+            def __init__(self, path):
+                self.other_path = path
+
+        same = SameNameArgs(0, 1)
+        self.assertTrue(same.path == 0)
+        self.assertTrue(same.other_path == 1)
+
     def test_fields(self):
         """Test fields()."""
         self.assertEqual(repr(fields(self.e)),
