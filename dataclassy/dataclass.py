@@ -100,14 +100,16 @@ class DataClassMeta(type):
 
 
 class DataClassInit(DataClassMeta):
-    """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
+    """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it, except for when init was set to False."""
     def __call__(cls, *args, **kwargs):
-        args = iter(args)
-        new_kwargs = dict(zip(cls.__annotations__, args))  # convert positional args to keyword for __new__
-        instance = cls.__new__(cls, **new_kwargs, **kwargs)
-
-        for parameter in kwargs.keys() & cls.__annotations__.keys():
-            del kwargs[parameter]
+        if cls.__dataclass__["init"]:
+            args = iter(args)
+            new_kwargs = dict(zip(cls.__annotations__, args))  # convert positional args to keyword for __new__
+            instance = cls.__new__(cls, **new_kwargs, **kwargs)
+            for parameter in kwargs.keys() & cls.__annotations__.keys():
+                del kwargs[parameter]
+        else:
+            instance = cls.__new__(cls)
 
         instance.__init__(*args, **kwargs)
         return instance
