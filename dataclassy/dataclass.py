@@ -82,7 +82,7 @@ class DataClassMeta(type):
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
             dict_.setdefault('__hash__', __hash__)
 
-        return type.__new__(mcs if not user_init else DataClassInit, name, bases, dict_)
+        return type.__new__(DataClassInit if options["init"] and user_init else mcs, name, bases, dict_)
 
     def __init__(cls, *args, **kwargs):
         # warn the user if they try to use __post_init__
@@ -100,16 +100,14 @@ class DataClassMeta(type):
 
 
 class DataClassInit(DataClassMeta):
-    """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it, except for when init was set to False."""
+    """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
     def __call__(cls, *args, **kwargs):
-        if cls.__dataclass__["init"]:
-            args = iter(args)
-            new_kwargs = dict(zip(cls.__annotations__, args))  # convert positional args to keyword for __new__
-            instance = cls.__new__(cls, **new_kwargs, **kwargs)
-            for parameter in kwargs.keys() & cls.__annotations__.keys():
-                del kwargs[parameter]
-        else:
-            instance = cls.__new__(cls)
+        args = iter(args)
+        new_kwargs = dict(zip(cls.__annotations__, args))  # convert positional args to keyword for __new__
+        instance = cls.__new__(cls, **new_kwargs, **kwargs)
+
+        for parameter in kwargs.keys() & cls.__annotations__.keys():
+            del kwargs[parameter]
 
         instance.__init__(*args, **kwargs)
         return instance
