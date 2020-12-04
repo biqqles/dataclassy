@@ -13,6 +13,7 @@ from inspect import signature
 from sys import getsizeof
 
 from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
+from dataclassy.dataclass import DataClassInit
 
 
 class Tests(unittest.TestCase):
@@ -83,10 +84,17 @@ class Tests(unittest.TestCase):
         self.assertEqual(str(signature(Pet)), '(name: str, age: int, species: str, foods: List[str] = [])')
 
     def test_init(self):
-        """Test correct generation of an __init__ method."""
+        """Test correct generation of a __new__ method."""
         self.assertEqual(
             str(signature(self.Beta)),
             "(a: int, c: int, f: int, b: int = 2, d: int = 4, e: dataclassy.dataclass.Internal[typing.Dict] = {})")
+
+        @dataclass(init=False)
+        class NoInit:
+            def __init__(self):
+                pass
+
+        self.assertFalse(type(NoInit) is DataClassInit)
 
     def test_repr(self):
         """Test correct generation of a __repr__ method."""
