@@ -70,7 +70,8 @@ dataclassy has several important differences from dataclasses, mainly reflective
 |*init-only variables*            |fields with type `InitVar`                  |arguments to `__init__`                 |
 |*class variables*                |fields with type `ClassVar`                 |fields without type annotation          |
 |*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
-|*field excluded from `repr`*     |`field(repr=False)`                         |`Internal` type wrapper or `_name`      |
+|*field excluded from `repr`*     |`b: int = field(repr=False)`                |`Internal` type wrapper or `_name`      |
+|*"late init" field*              |`c: int = field(init=False`)                |`c: int = None`                         |
 
 There are a couple of minor differences, too:
 
