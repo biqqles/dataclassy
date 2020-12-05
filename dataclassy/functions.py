@@ -21,7 +21,7 @@ def is_dataclass_instance(obj: Any) -> bool:
     return isinstance(type(obj), DataClassMeta)
 
 
-def fields(dataclass: DataClass, internals=False) -> Dict[str, Type]:
+def fields(dataclass: Type[DataClass], internals=False) -> Dict[str, Type]:
     """Return a dict of `dataclass`'s fields and their types. `internals` selects whether to include internal fields.
     `dataclass` can be either a data class or an instance of a data class. A field is defined as a class-level variable
     with a type annotation."""
