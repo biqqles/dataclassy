@@ -98,6 +98,20 @@ class DataClassMeta(type):
         tuple_expr = ', '.join((*(f'self.{f}' for f in fields(cls)), ''))  # '' ensures closing comma
         cls.__tuple__ = property(eval(f'lambda self: ({tuple_expr})'))
 
+
+class DataClassInit(DataClassMeta):
+    """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
+    def __call__(cls, *args, **kwargs):
+        args = iter(args)
+        new_kwargs = dict(zip(cls.__annotations__, args))  # convert positional args to keyword for __new__
+        instance = cls.__new__(cls, **new_kwargs, **kwargs)
+
+        for parameter in kwargs.keys() & cls.__annotations__.keys():
+            del kwargs[parameter]
+
+        instance.__init__(*args, **kwargs)
+        return instance
+
     @property
     def __signature__(cls):
         """Defining a __call__ breaks inspect.signature. Lazily generate a Signature object ourselves."""
