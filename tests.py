@@ -6,7 +6,7 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 import unittest
 from collections import namedtuple
 from inspect import signature
@@ -99,6 +99,14 @@ class Tests(unittest.TestCase):
     def test_repr(self):
         """Test correct generation of a __repr__ method."""
         self.assertEqual(repr(self.b), "Beta(a=1, b=2, c=2, d=4, f=3)")
+
+        @dataclass
+        class Recursive:
+            recurse: Optional['Recursive'] = None
+
+        r = Recursive()
+        r.recurse = r
+        self.assertEqual(repr(r), 'Recursive(recurse=Recursive(this))')
 
     def test_iter(self):
         """Test correct generation of an __iter__ method."""
