@@ -66,11 +66,13 @@ class DataClassMeta(type):
             for d in all_annotations.keys() - all_defaults.keys() & dict_.keys():
                 del dict_[d]
             del dict_['__slots__']
+
         if options['init']:
             dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults, user_init,
                                                       options['kwargs'], options['frozen']))
         if options['repr']:
-            dict_.setdefault('__repr__', __repr__)
+            from reprlib import recursive_repr
+            dict_.setdefault('__repr__', recursive_repr(f'{name}(this)')(__repr__))
         if options['eq']:
             dict_.setdefault('__eq__', __eq__)
         if options['iter']:
