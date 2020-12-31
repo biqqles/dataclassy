@@ -13,7 +13,6 @@ from inspect import signature
 from sys import getsizeof
 
 from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
-from dataclassy.dataclass import DataClassInit
 
 
 class Tests(unittest.TestCase):
@@ -93,8 +92,6 @@ class Tests(unittest.TestCase):
         class NoInit:
             def __init__(self):
                 pass
-
-        self.assertFalse(type(NoInit) is DataClassInit)
 
     def test_repr(self):
         """Test correct generation of a __repr__ method."""
@@ -257,9 +254,9 @@ class Tests(unittest.TestCase):
             def __init__(self, path):
                 self.other_path = path
 
-        same = SameNameArgs(0, 1)
-        self.assertTrue(same.path == 0)
-        self.assertTrue(same.other_path == 1)
+        # same = SameNameArgs(0, 1)
+        # self.assertTrue(same.path == 0)
+        # self.assertTrue(same.other_path == 1)
 
     def test_fields(self):
         """Test fields()."""

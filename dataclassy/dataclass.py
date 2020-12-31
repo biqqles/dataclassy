@@ -53,7 +53,8 @@ class DataClassMeta(type):
         del dict_['__dict__'], dict_['__weakref__']
 
         # create/apply generated methods and attributes
-        user_init = type(dict_.get('__init__')) is Function
+        # TODO: neaten
+        user_init = (not dataclass_bases and type(dict_.get('__init__')) is Function) or '__user_init__' in dict_
 
         if options['slots']:
             # values with default values must only be present in slots, not dict, otherwise Python will interpret them
@@ -67,9 +68,12 @@ class DataClassMeta(type):
                 del dict_[d]
             del dict_['__slots__']
 
-        if options['init']:
-            dict_.setdefault('__new__', _generate_new(all_annotations, all_defaults, user_init,
-                                                      options['kwargs'], options['frozen']))
+        if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
+            if user_init:
+                dict_['__user_init__'] = dict_.pop('__init__')  # could also maybe use __post_init__ if not confusing
+            print(name)
+            dict_['__init__'] = _generate_init(all_annotations, all_defaults, user_init,
+                                               options['kwargs'], options['frozen'])
         if options['repr']:
             from reprlib import recursive_repr
             dict_.setdefault('__repr__', recursive_repr(f'{name}(this)')(__repr__))
@@ -84,7 +88,7 @@ class DataClassMeta(type):
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
             dict_.setdefault('__hash__', __hash__)
 
-        return type.__new__((DataClassInit if options['init'] and user_init else mcs), name, bases, dict_)
+        return type.__new__(mcs, name, bases, dict_)
 
     def __init__(cls, *args, **kwargs):
         # warn the user if they try to use __post_init__
@@ -101,28 +105,7 @@ class DataClassMeta(type):
         cls.__tuple__ = property(eval(f'lambda self: ({tuple_expr})'))
 
 
-class DataClassInit(DataClassMeta):
-    """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
-    def __call__(cls, *args, **kwargs):
-        args = iter(args)
-        new_kwargs = dict(zip(cls.__annotations__, args))  # convert positional args to keyword for __new__
-        instance = cls.__new__(cls, **new_kwargs, **kwargs)
-
-        for parameter in kwargs.keys() & cls.__annotations__.keys():
-            del kwargs[parameter]
-
-        instance.__init__(*args, **kwargs)
-        return instance
-
-    @property
-    def __signature__(cls):
-        """Defining a __call__ breaks inspect.signature. Lazily generate a Signature object ourselves."""
-        import inspect
-        parameters = tuple(inspect.signature(cls.__new__).parameters.values())
-        return inspect.Signature(parameters[1:])  # remove 'cls' to transform parameters of __new__ into those of class
-
-
-def _generate_new(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
+def _generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
     """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
     When the data class is initialised, arguments to this function are applied to the fields of the new instance. Using
     __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation.
@@ -132,25 +115,26 @@ def _generate_new(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
     positionally and as a keyword."""
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
-    kw_only = ['*'] if user_init and (arguments or default_arguments) else []
-    kwargs = ['**kwargs'] if gen_kwargs or user_init else []  # pass through unknown keyword arguments to __init__
+    args = ['*args'] if user_init else []
+    kwargs = ['**kwargs'] if user_init or gen_kwargs else []
 
-    parameters = ', '.join(kw_only + arguments + default_arguments + kwargs)
+    parameters = ', '.join(arguments + default_arguments + args + kwargs)
 
     # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
-    references = {n: f'{n}.copy() if {n} is self.__defaults__[{n!r}] else {n}'
+    references = {n: f'{n}.copy() if {n} is self.__defaults__[{n!r}] else {n}'  # todo or compare ids
                   if n in defaults and hasattr(defaults[n], 'copy') else n for n in annotations}
 
     # if the class is frozen, use the necessary but slightly slower object.__setattr__
     assignments = [f'object.__setattr__(self, {n!r}, {r})' if frozen else f'self.{n} = {r}'
                    for n, r in references.items()]
 
-    # generate the function
-    signature = f'def __new__(cls, {parameters}):'
-    body = [f'self = object.__new__(cls)', *assignments, 'return self']
+    call_user_init = ['self.__user_init__(*args, **kwargs)'] if user_init else []
 
-    exec('\n\t'.join([signature, *body]), {}, defaults)
-    function = defaults.pop('__new__')
+    # generate the function
+    lines = [f'def __init__(self, {parameters}):', *assignments, *call_user_init]
+
+    exec('\n\t'.join(lines), {}, defaults)
+    function = defaults.pop('__init__')
     function.__annotations__ = annotations
     return function
 
