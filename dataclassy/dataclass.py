@@ -8,10 +8,12 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType as Function
-from typing import Any, Dict, Generic, Hashable, TypeVar
+from typing import Any, Dict, Generic, Hashable, List, TypeVar
 
 DataClass = Any  # type hint for variables that should be data class instances
 T = TypeVar('T')
+
+USER_INIT_ALIAS = '__user_init__'
 
 
 class Internal(Generic[T]):
@@ -54,7 +56,7 @@ class DataClassMeta(type):
 
         # create/apply generated methods and attributes
         # TODO: neaten
-        user_init = (not dataclass_bases and type(dict_.get('__init__')) is Function) or '__user_init__' in dict_
+        user_init = (not dataclass_bases and type(dict_.get('__init__')) is Function) or USER_INIT_ALIAS in dict_
 
         if options['slots']:
             # values with default values must only be present in slots, not dict, otherwise Python will interpret them
@@ -70,8 +72,7 @@ class DataClassMeta(type):
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
             if user_init:
-                dict_['__user_init__'] = dict_.pop('__init__')  # could also maybe use __post_init__ if not confusing
-            print(name)
+                dict_[USER_INIT_ALIAS] = dict_.pop('__init__')  # could also maybe use __post_init__ if not confusing
             dict_['__init__'] = _generate_init(all_annotations, all_defaults, user_init,
                                                options['kwargs'], options['frozen'])
         if options['repr']:
@@ -106,13 +107,9 @@ class DataClassMeta(type):
 
 
 def _generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
-    """Generate and return a __new__ method for a data class which has as parameters all fields of the data class.
-    When the data class is initialised, arguments to this function are applied to the fields of the new instance. Using
-    __new__ frees up __init__, allowing it to be defined by the user to perform additional, custom initialisation.
-
-    If __init__ is defined, all arguments to __new__ become keyword-only, and the custom __call__ converts positional
-    arguments to keyword arguments. This prevents ambiguity during attempts to pass the same argument twice,
-    positionally and as a keyword."""
+    """Generate and return an __init__ method for a data class which has as parameters all fields of the data class.
+    When the data class is initialised, arguments to this function are applied to the fields of the new instance.
+    A user-defined __init__, if present, must be aliased to avoid conflicting."""
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
     args = ['*args'] if user_init else []
@@ -120,21 +117,30 @@ def _generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwarg
 
     parameters = ', '.join(arguments + default_arguments + args + kwargs)
 
+    # surprisingly, given global lookups are slow, using them is the fastest way to compare a field to its default
+    # the alternatives are to look up on self (which wouldn't work when slots=True) or look up self.__defaults__
+    default_names = {f'default_{n}': v for n, v in defaults.items()}
+
     # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
-    references = {n: f'{n}.copy() if {n} is self.__defaults__[{n!r}] else {n}'  # todo or compare ids
-                  if n in defaults and hasattr(defaults[n], 'copy') else n for n in annotations}
+    references = {n: f'{n}.copy() if {n} is default_{n} else {n}' if n in defaults and hasattr(defaults[n], 'copy')
+                  else n for n in annotations}
 
-    # if the class is frozen, use the necessary but slightly slower object.__setattr__
-    assignments = [f'object.__setattr__(self, {n!r}, {r})' if frozen else f'self.{n} = {r}'
-                   for n, r in references.items()]
-
-    call_user_init = ['self.__user_init__(*args, **kwargs)'] if user_init else []
+    # if the class is frozen, use the necessary but far slower object.__setattr__
+    assignments = [f'object.__setattr__(self, {n!r}, {r})' if frozen
+                   else f'self.{n} = {r}' for n, r in references.items()]
 
     # generate the function
-    lines = [f'def __init__(self, {parameters}):', *assignments, *call_user_init]
+    lines = [f'def __init__(self, {parameters}):',
+             *assignments,
+             f'self.{USER_INIT_ALIAS}(*args, **kwargs)' if user_init else '']
 
-    exec('\n\t'.join(lines), {}, defaults)
-    function = defaults.pop('__init__')
+    return eval_function('__init__', lines, annotations, defaults, default_names)
+
+
+def eval_function(name: str, lines: List[str], annotations: Dict, l_namespace: Dict, g_namespace: Dict) -> Function:
+    """Evaluate a function definition, returning the resulting object."""
+    exec('\n\t'.join(lines), g_namespace, l_namespace)
+    function = l_namespace.pop(name)
     function.__annotations__ = annotations
     return function
 
