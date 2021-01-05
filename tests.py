@@ -103,7 +103,7 @@ class Tests(unittest.TestCase):
 
         r = Recursive()
         r.recurse = r
-        self.assertEqual(repr(r), 'Recursive(recurse=Recursive(this))')
+        self.assertEqual(repr(r), 'Recursive(recurse=...)')
 
     def test_iter(self):
         """Test correct generation of an __iter__ method."""
