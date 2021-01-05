@@ -76,8 +76,7 @@ class DataClassMeta(type):
             dict_['__init__'] = _generate_init(all_annotations, all_defaults, user_init,
                                                options['kwargs'], options['frozen'])
         if options['repr']:
-            from reprlib import recursive_repr
-            dict_.setdefault('__repr__', recursive_repr(f'{name}(this)')(__repr__))
+            dict_.setdefault('__repr__', __repr__)
         if options['eq']:
             dict_.setdefault('__eq__', __eq__)
         if options['iter']:
@@ -171,7 +170,8 @@ def __iter__(self):
 
 def __repr__(self):
     show_internals = not self.__dataclass__['hide_internals']
-    field_values = ', '.join(f'{f}={v!r}' for f, v in values(self, show_internals).items())
+    field_values = ', '.join(f'{f}=...' if v is self
+                             else f'{f}={v!r}' for f, v in values(self, show_internals).items())
     return f'{type(self).__name__}({field_values})'
 
 
