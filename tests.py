@@ -13,7 +13,7 @@ from inspect import signature
 from sys import getsizeof
 
 from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
-from dataclassy.dataclass import DataClassInit
+from dataclassy.dataclass import DataClassInit, DataClassMeta
 
 
 class Tests(unittest.TestCase):
@@ -70,6 +70,39 @@ class Tests(unittest.TestCase):
             @dataclass(meta=int)
             class Dummy:
                 pass
+
+    def test_decorator_with_meta(self):
+        class DataClassMetaSubClass(DataClassMeta):
+            pass
+        @dataclass
+        class NoInitNoMeta:
+            pass
+        @dataclass
+        class YesInitNoMeta:
+            def __init__(self): pass
+        @dataclass(meta=DataClassMetaSubClass)
+        class NoInitYesMeta:
+            pass
+        @dataclass(meta=DataClassMetaSubClass)
+        class YesInitYesMeta:
+            def __init__(self): pass
+        @dataclass(meta=DataClassMetaSubClass)
+        class YesInitYesMeta2:
+            def __init__(self): pass
+
+        self.assertIs(type(NoInitNoMeta), DataClassMeta)
+        self.assertIs(type(YesInitNoMeta), DataClassInit)
+        self.assertIs(type(NoInitYesMeta), DataClassMetaSubClass)
+
+        #check the automatic subclass creation for DataClassInit
+        self.assertIsNot(type(YesInitYesMeta), DataClassMetaSubClass)
+        self.assertIsNot(type(YesInitYesMeta), DataClassInit)
+        self.assertIsInstance(YesInitYesMeta, DataClassInit)
+        self.assertIsInstance(YesInitYesMeta, DataClassMetaSubClass)
+        #check the subclass name
+        self.assertEqual(type(YesInitYesMeta).__name__, "DataClassMetaSubClassInit")
+        #check that the caching works when you use the same meta twice
+        self.assertIs(type(YesInitYesMeta), type(YesInitYesMeta2))
 
     def test_readme(self):
         """Test all examples from the project readme."""

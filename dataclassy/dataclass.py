@@ -84,7 +84,7 @@ class DataClassMeta(type):
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
             dict_.setdefault('__hash__', __hash__)
 
-        return type.__new__((DataClassInit if options['init'] and user_init else mcs), name, bases, dict_)
+        return type.__new__((mcs.dataclassinit() if options['init'] and user_init else mcs), name, bases, dict_)
 
     def __init__(cls, *args, **kwargs):
         # warn the user if they try to use __post_init__
@@ -100,6 +100,22 @@ class DataClassMeta(type):
         tuple_expr = ', '.join((*(f'self.{f}' for f in fields(cls)), ''))  # '' ensures closing comma
         cls.__tuple__ = property(eval(f'lambda self: ({tuple_expr})'))
 
+    __dataclassinits = {}
+    @classmethod
+    def dataclassinit(mcs):
+        #if it's already DataClassInit
+        if issubclass(mcs, DataClassInit): return mcs
+        #if the class is DataClassMeta
+        if issubclass(DataClassInit, mcs): return DataClassInit
+
+        #make a DataClassInit for the subclass of DataClassMeta
+        if mcs not in mcs.__dataclassinits:
+            class NewDataClassInit(mcs, DataClassInit):
+                pass
+            NewDataClassInit.__name__ = mcs.__name__ + "Init"
+            mcs.__dataclassinits[mcs] = NewDataClassInit
+
+        return mcs.__dataclassinits[mcs]
 
 class DataClassInit(DataClassMeta):
     """In the case that a custom __init__ is defined, remove arguments used by __new__ before calling it."""
