@@ -298,6 +298,22 @@ class Tests(unittest.TestCase):
         self.assertEqual(multiple.a, 1)
         self.assertEqual(multiple.h, [])
 
+    def test_init_subclass(self):
+        @dataclass
+        class NoInit:
+            a: int
+        @dataclass
+        class NoInitInSubClass(NoInit):
+            b: int
+        class InitInSubClass(NoInit):
+            def __init__(self, c):
+                self.c = c
+
+        self.assertTrue(hasattr(InitInSubClass, "__post_init__"))
+        self.assertFalse(hasattr(NoInitInSubClass, "__post_init__"))
+        initinsubclass = InitInSubClass(0, 1)
+        self.assertEqual(initinsubclass.c, 1)
+
     def test_fields(self):
         """Test fields()."""
         self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')]))
