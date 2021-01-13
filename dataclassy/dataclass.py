@@ -13,8 +13,6 @@ from typing import Any, Dict, Generic, Hashable, List, TypeVar
 DataClass = Any  # type hint for variables that should be data class instances
 T = TypeVar('T')
 
-USER_INIT_ALIAS = '__user_init__'
-
 
 class Internal(Generic[T]):
     """This type hint wrapper represents a field that is internal to the data class and is, for example, not to be
@@ -45,6 +43,10 @@ class DataClassMeta(type):
             options.update(b.get('__dataclass__', {}))
         options.update(kwargs)
 
+        # determine whether a post-initialisation method is defined
+        post_init = (type(dict_.get('__init__')) is Function and not dataclass_bases
+                     or type(dict_.get('__post_init__')) is Function)
+
         # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
         dict_.update(all_defaults)
         dict_['__defaults__'] = all_defaults
@@ -55,46 +57,46 @@ class DataClassMeta(type):
         del dict_['__dict__'], dict_['__weakref__']
 
         # create/apply generated methods and attributes
-        # TODO: neaten
-        user_init = (not dataclass_bases and type(dict_.get('__init__')) is Function) or USER_INIT_ALIAS in dict_
-
         if options['slots']:
-            # values with default values must only be present in slots, not dict, otherwise Python will interpret them
-            # as read only
+            # if the slots option is added, specify them. Values with default values must only be present in slots,
+            # not dict, otherwise Python will interpret them as read only
             for d in all_annotations.keys() & all_defaults.keys():
                 del dict_[d]
             dict_['__slots__'] = all_annotations.keys() - all_slots
         elif '__slots__' in dict_:
-            # if the slots option has been removed from an inheriting dataclass we must remove descriptors and __slots__
+            # if the slots option gets removed, remove descriptors and __slots__
             for d in all_annotations.keys() - all_defaults.keys() & dict_.keys():
                 del dict_[d]
             del dict_['__slots__']
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
-            if user_init:
-                dict_[USER_INIT_ALIAS] = dict_.pop('__init__')  # could also maybe use __post_init__ if not confusing
-            dict_['__init__'] = _generate_init(all_annotations, all_defaults, user_init,
-                                               options['kwargs'], options['frozen'])
+            if post_init and '__init__' in dict_:
+                dict_['__post_init__'] = dict_.pop('__init__')
+            dict_['__init__'] = generate_init(all_annotations, all_defaults, post_init,
+                                              options['kwargs'], options['frozen'])
+
         if options['repr']:
             dict_.setdefault('__repr__', __repr__)
+
         if options['eq']:
             dict_.setdefault('__eq__', __eq__)
+
         if options['iter']:
             dict_.setdefault('__iter__', __iter__)
+
         if options['frozen']:
             dict_['__delattr__'] = dict_['__setattr__'] = __setattr__
+
         if options['order']:
             dict_.setdefault('__lt__', __lt__)
+
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
             dict_.setdefault('__hash__', __hash__)
 
         return type.__new__(mcs, name, bases, dict_)
 
+    # noinspection PyMissingConstructor,PyUnresolvedReferences,PyTypeChecker,PyUnusedLocal
     def __init__(cls, *args, **kwargs):
-        # warn the user if they try to use __post_init__
-        if hasattr(cls, '__post_init__'):
-            raise TypeError('dataclassy does not use __post_init__. You should rename this method __init__')
-
         if cls.__dataclass__['eq'] and cls.__dataclass__['order']:
             from functools import total_ordering
             total_ordering(cls)
@@ -105,9 +107,9 @@ class DataClassMeta(type):
         cls.__tuple__ = property(eval(f'lambda self: ({tuple_expr})'))
 
 
-def _generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
-    """Generate and return an __init__ method for a data class which has as parameters all fields of the data class.
-    When the data class is initialised, arguments to this function are applied to the fields of the new instance.
+def generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
+    """Generate and return an __init__ method for a data class. This method has as parameters all fields of the data
+    class. When the data class is initialised, arguments to this function are applied to the fields of the new instance.
     A user-defined __init__, if present, must be aliased to avoid conflicting."""
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
@@ -131,21 +133,20 @@ def _generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwarg
     # generate the function
     lines = [f'def __init__(self, {parameters}):',
              *assignments,
-             f'self.{USER_INIT_ALIAS}(*args, **kwargs)' if user_init else '']
+             'self.__post_init__(*args, **kwargs)' if user_init else '']
 
     return eval_function('__init__', lines, annotations, defaults, default_names)
 
 
-def eval_function(name: str, lines: List[str], annotations: Dict, l_namespace: Dict, g_namespace: Dict) -> Function:
+def eval_function(name: str, lines: List[str], annotations: Dict, locals_: Dict, globals_: Dict) -> Function:
     """Evaluate a function definition, returning the resulting object."""
-    exec('\n\t'.join(lines), g_namespace, l_namespace)
-    function = l_namespace.pop(name)
+    exec('\n\t'.join(lines), globals_, locals_)
+    function = locals_.pop(name)
     function.__annotations__ = annotations
     return function
 
 
 # generic method implementations common to all data classes
-# these are currently relatively inefficient - it would be better to cache an expression for a class' tuple
 from .functions import values, fields
 
 
