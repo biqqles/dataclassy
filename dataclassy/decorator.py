@@ -6,11 +6,11 @@
 
  This file contains code relating to dataclassy's decorator.
 """
-from typing import Any, Dict, Optional
-from .dataclass import DataClassMeta
+from typing import Dict, Optional, Type
+from .dataclass import DataClass, DataClassMeta
 
 
-def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options):
+def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options) -> Type[DataClass]:
     """The decorator used to apply DataClassMeta, or optionally a subclass of that metaclass, to a class."""
     assert issubclass(meta, DataClassMeta)
 
@@ -21,12 +21,12 @@ def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options):
 
     if cls:  # if decorator used with no arguments, apply metaclass to the class immediately
         if not isinstance(cls, type):
-            raise TypeError('This decorator takes no explicit positional arguments')
+            raise TypeError('This decorator must be applied to a class')
         return apply_metaclass(cls)
     return apply_metaclass  # otherwise, return function for later evaluation
 
 
-def make_dataclass(name: str, fields: Dict[str, type], defaults: Dict[str, Any], bases=(), **options) -> type:
+def make_dataclass(name: str, fields: Dict, defaults: Dict, bases=(), **options) -> Type[DataClass]:
     """Dynamically create a data class with name `name`, fields `fields`, default field values `defaults` and
     inheriting from `bases`."""
     return dataclass(type(name, bases, dict(defaults, __annotations__=fields)), **options)
