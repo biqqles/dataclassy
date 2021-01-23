@@ -2,13 +2,13 @@ from setuptools import setup
 
 setup(
     name='dataclassy',
-    version='0.6.2',
+    version='0.7',
 
     author='biqqles',
     author_email='biqqles@protonmail.com',
     url='https://github.com/biqqles/dataclassy',
 
-    description='A reimplementation of data classes in Python',
+    description='A fast and flexible reimplementation of data classes',
     long_description=open('README.md').read(),
     long_description_content_type='text/markdown',
 
@@ -18,6 +18,8 @@ setup(
         'License :: OSI Approved :: Mozilla Public License 2.0 (MPL 2.0)',
         'Operating System :: OS Independent',
         'Development Status :: 4 - Beta',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Programming Language :: Python :: Implementation :: PyPy',
     ],
     python_requires='>=3.6',
 )
