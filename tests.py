@@ -159,6 +159,7 @@ class Tests(unittest.TestCase):
         self.assertFalse(hash(Hashable(1)) == hash(AlsoHashable(1)))
         d = {Hashable(1): 1, Hashable(2): 2, AlsoHashable(1): 3}
         self.assertEqual(d[Hashable(1)], 1)
+        self.assertEqual(hash((Hashable, 1)), hash(Hashable(1)))
 
     def test_slots(self):
         """Test correct generation and efficacy of a __slots__ attribute."""
