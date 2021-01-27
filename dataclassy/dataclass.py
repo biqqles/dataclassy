@@ -162,7 +162,7 @@ def __lt__(self: DataClass, other: DataClass):
 
 def __hash__(self):
     # currently not ideal since gives no warning if a field expected to be hashable is not
-    return hash((type(self), *(v for v in self.__tuple__ if v is isinstance(v, Hashable))))
+    return hash((type(self), *(v for v in self.__tuple__ if isinstance(v, Hashable))))
 
 
 def __iter__(self):
