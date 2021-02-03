@@ -82,6 +82,12 @@ class Tests(unittest.TestCase):
 
         self.assertEqual(str(signature(Pet)), '(name: str, age: int, species: str, foods: List[str] = [])')
 
+    def test_internal(self):
+        """Test the internal type hint."""
+        self.assertTrue(Internal.is_internal(Internal[int]))
+        self.assertTrue(Internal.is_internal('Internal[int]'))
+        self.assertFalse(Internal.is_internal(int))
+
     def test_init(self):
         """Test correct generation of a __new__ method."""
         self.assertEqual(
