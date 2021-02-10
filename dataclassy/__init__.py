@@ -10,3 +10,11 @@ from .functions import fields, values, as_dict, as_tuple, replace
 
 # aliases intended for migration from dataclasses
 asdict, astuple = as_dict, as_tuple
+
+# for the benefit of mypy --strict
+__all__ = (
+    'dataclass', 'make_dataclass',
+    'DataClass', 'Internal',
+    'fields', 'values', 'as_dict', 'as_tuple', 'replace',
+    'asdict', 'astuple',
+)
