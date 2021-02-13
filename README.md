@@ -256,3 +256,11 @@ The `Internal` type wrapper marks a field as being "internal" to the data class.
 
 #### `DataClass`
 Use this type hint to indicate that a variable, parameter or field should be a generic data class instance. For example, dataclassy uses these in the signatures of `as_dict`, `as_tuple` and `values` to show that these functions should be called on data class instances.
+
+### MyPy support
+In order to use dataclassy in projects with mypy, you will need to use the mypy plugin. You can create a `mypy.ini` or `.mypy.ini` for such projects with the following content:
+
+```
+[mypy]
+plugins = dataclassy.mypy
+```
