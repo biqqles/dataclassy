@@ -14,7 +14,7 @@ Data classes from **dataclassy** offer the following advantages over those from 
     - Complete freedom in field ordering - no headaches if a field with a default value follows a field without one
 - Optional generation of:
     - `__slots__`, significantly improving memory efficiency and lookup performance
-    - `**kwargs`, simplifying dataclass instantiation from dictionaries
+    - `**kwargs`, simplifying data class instantiation from dictionaries
     - An `__iter__` method, enabling data class destructuring
 - Internal fields (marked with `_` or `__`) are excluded from `__repr__` by default
 
@@ -50,13 +50,13 @@ pip install https://github.com/biqqles/dataclassy/archive/master.zip -U
 By and large, dataclassy is a drop-in replacement for dataclasses. If you simply use the decorator and other functions, it is possible to instantly migrate from dataclasses to dataclassy by simply changing
 
 ```Python
-from dataclasses import dataclass
+from dataclasses import *
 ```
 
 to
 
 ```Python
-from dataclassy import dataclass
+from dataclassy import *
 ```
 
 This being said, there *are* differences.  dataclassy does not try to be a "clone" of dataclasses, but rather an alternative, feature-complete implementation of the concept with its own design philosophy, yet one that remains highly familiar to those acquainted with the module in the standard library. Minimalism takes precedence over compatibility.
@@ -205,7 +205,7 @@ If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.
 If true, generate an [`__iter__`](https://docs.python.org/3/reference/datamodel.html#object.__iter__) method that returns the values of the class's fields, in order of definition. This can be used to destructure a data class instance, as with a Scala `case class` or a Python `namedtuple`.
 
 ##### `kwargs`
-If true, add [`**kwargs`](https://docs.python.org/3.3/glossary.html#term-parameter) to the end of the parameter list for `__init__`. This simplifies data class instantiation from dictionaries that may have keys in addition to the fields of the dataclass (i.e. `SomeDataClass(**some_dict)`).
+If true, add [`**kwargs`](https://docs.python.org/3.3/glossary.html#term-parameter) to the end of the parameter list for `__init__`. This simplifies data class instantiation from dictionaries that may have keys in addition to the fields of the data class (i.e. `SomeDataClass(**some_dict)`).
 
 ##### `slots`
 If true, generate a [`__slots__`](https://docs.python.org/3/reference/datamodel.html#slots) attribute for the class. This reduces the memory footprint of instances and attribute lookup overhead. However, `__slots__` come with a few [restrictions](https://docs.python.org/3/reference/datamodel.html#notes-on-using-slots) (for example, multiple inheritance becomes tricky) that you should be aware of.
@@ -235,12 +235,12 @@ A field is defined as a class-level variable with a [type annotation](https://do
 Return a dict of `dataclass`'s fields and their values. `internals` selects whether to include internal fields. `dataclass` must be an instance of a data class.
 
 #### `as_dict(dataclass dict_factory=dict)`
-Recursively create a dict of a dataclass instance's fields and their values.
+Recursively create a dict of a data class instance's fields and their values.
 
 This function is recursively called on data classes, named tuples and iterables.
 
 #### `as_tuple(dataclass)`
-Recursively create a tuple of the values of a dataclass instance's fields, in definition order.
+Recursively create a tuple of the values of a data class instance's fields, in definition order.
 
 This function is recursively called on data classes, named tuples and iterables.
 
