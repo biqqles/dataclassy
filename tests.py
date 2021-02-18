@@ -285,6 +285,19 @@ class Tests(unittest.TestCase):
 
         HasInit(test=3)
 
+    def test_multiple_inheritance(self):
+        """Test that multiple inheritance produces an __init__ with the expected parameters."""
+        class Multiple(self.Alpha, self.Epsilon):
+            z: bool
+
+        self.assertEqual(str(signature(Multiple)), "(a: int, c: int, g: Tuple[tests.NT], "
+                                                   "h: List[ForwardRef('Epsilon')], z: bool, b: int = 2, _i: int = 0)")
+
+        # verify initialiser is functional
+        multiple = Multiple(1, 2, tuple(), [], True)
+        self.assertEqual(multiple.a, 1)
+        self.assertEqual(multiple.h, [])
+
     def test_fields(self):
         """Test fields()."""
         self.assertEqual(repr(fields(self.e)),
