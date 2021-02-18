@@ -11,7 +11,22 @@ from .dataclass import DataClass, DataClassMeta
 
 
 def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options) -> Type[DataClass]:
-    """The decorator used to apply DataClassMeta, or optionally a subclass of that metaclass, to a class."""
+    """The decorator used to convert an ordinary class into a data class.
+
+    :param cls: The class to be converted into a data class
+    :param meta: The metaclass to use
+    :key init: Generate an __init__ method
+    :key repr: Generate a __repr__ method
+    :key eq: Generate an __eq__ method
+    :key iter: Generate an __iter__ method
+    :key frozen: Allow field reassignment after initialisation
+    :key kwargs: Append **kwargs to the list of initialiser parameters
+    :key slots: Generate __slots__
+    :key order: Generate comparison methods other than __eq__
+    :key unsafe_hash: Force generation of __hash__
+    :key hide_internals: Hide internal methods in __repr__
+    :return: The newly created data class
+    """
     assert issubclass(meta, DataClassMeta)
 
     def apply_metaclass(to_class, metaclass=meta):
