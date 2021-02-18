@@ -262,12 +262,28 @@ class Tests(unittest.TestCase):
         with self.assertRaises(TypeError):  # previously broken (see issue #7)
             Issue6(3, a=2)
 
+        # test class with no fields but init args
+
         @dataclass
-        class Empty:  # test class with no fields but init args
+        class Empty:
             def __init__(self, a):
                 pass
 
         Empty(0)
+
+        # test init detection when defined on subclass
+
+        @dataclass
+        class TotallyEmpty:
+            pass
+
+        class HasInit(TotallyEmpty):
+            _test: int = None
+
+            def __init__(self, test: int):
+                self._test = test
+
+        HasInit(test=3)
 
     def test_fields(self):
         """Test fields()."""
