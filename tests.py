@@ -6,7 +6,7 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple, Optional, ForwardRef
+from typing import Dict, List, Tuple, Optional, ForwardRef, Union
 import unittest
 from collections import namedtuple
 from inspect import signature
@@ -92,7 +92,7 @@ class Tests(unittest.TestCase):
         """Test correct generation of a __new__ method."""
         self.assertEqual(
             str(signature(self.Beta)),
-            "(a: int, c: int, f: int, b: int = 2, d: int = 4, e: dataclassy.dataclass.Internal[typing.Dict] = {})")
+            "(a: int, c: int, f: int, b: int = 2, d: int = 4, e: Union[dataclassy.dataclass.Internal, Dict] = {})")
 
         @dataclass(init=False)
         class NoInit:

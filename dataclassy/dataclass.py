@@ -8,19 +8,24 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType as Function
-from typing import Any, Dict, Generic, Hashable, List, Type, TypeVar, Union
+from typing import Any, Dict, Hashable, List, Type, Union
 
 DataClass = Any  # type hint for variables that should be data class instances
-T = TypeVar('T')
 
 
-class Internal(Generic[T]):
-    """This type hint wrapper represents a field that is internal to the data class and is, for example, not to be
-    shown in a repr."""
+class Internal:
+    """This type hint wrapper represents a field that is internal to the data class and is, for example, not
+    to be shown in a repr. Usage is like Internal[some_type]."""
+    def __class_getitem__(cls, item: Type) -> Union['Internal']:
+        """Create a new Union of the wrapper and the wrapped type. Union is smart enough to flatten nested
+        unions automatically."""
+        return Union[cls, item]
+
     @classmethod
-    def is_internal(cls, annotation: Union[Type, str]):
-        return getattr(annotation, '__origin__', None) is cls or \
-               (type(annotation) is str and annotation.startswith(f'{cls.__name__}['))
+    def is_internal(cls, hint: Union[Type, str]) -> bool:
+        """Check whether a type hint represents Internal."""
+        return (hasattr(hint, '__args__') and cls in hint.__args__ or
+                (type(hint) is str and hint.startswith(f'{cls.__name__}[')))
 
 
 class DataClassMeta(type):
