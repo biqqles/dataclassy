@@ -6,7 +6,7 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, ForwardRef
 import unittest
 from collections import namedtuple
 from inspect import signature
@@ -300,15 +300,13 @@ class Tests(unittest.TestCase):
 
     def test_fields(self):
         """Test fields()."""
-        self.assertEqual(repr(fields(self.e)),
-                         "{'g': typing.Tuple[tests.NT], 'h': typing.List[ForwardRef('Epsilon')]}")
-        self.assertEqual(repr(fields(self.e, True)),
-                         "{'g': typing.Tuple[tests.NT], 'h': typing.List[ForwardRef('Epsilon')], '_i': <class 'int'>}")
+        self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')]))
+        self.assertEqual(fields(self.e, True), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')], _i=int))
 
     def test_values(self):
         """Test values()."""
-        self.assertEqual(repr(values(self.e)), "{'g': NT(x=1, y=2, z=3), 'h': [Epsilon(g=4, h=5)]}")
-        self.assertEqual(repr(values(self.e, True)), "{'g': NT(x=1, y=2, z=3), 'h': [Epsilon(g=4, h=5)], '_i': 0}")
+        self.assertEqual(values(self.e), dict(g=self.NT(1, 2, 3), h=[self.Epsilon(4, 5)]))
+        self.assertEqual(values(self.e, True), dict(g=self.NT(1, 2, 3), h=[self.Epsilon(4, 5)], _i=0))
 
     def test_as_tuple(self):
         """Test as_tuple()."""
