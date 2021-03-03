@@ -251,8 +251,8 @@ Dynamically create a data class with name `name`, fields `fields`, default field
 Return a new copy of `dataclass` with field values replaced as specified in `changes`.
 
 ### Type hints
-#### Internal
+#### `Internal`
 The `Internal` type wrapper marks a field as being "internal" to the data class. Fields which begin with the ["internal use"](https://www.python.org/dev/peps/pep-0008/#descriptive-naming-styles) idiomatic indicator `_` or the [private field](https://docs.python.org/3/tutorial/classes.html#private-variables) interpreter indicator `__` are automatically treated as internal fields.  The `Internal` type wrapper therefore serves as an alternative method of indicating that a field is internal for situations where you are unable to name your fields in this way.
 
-#### DataClass
+#### `DataClass`
 Use this type hint to indicate that a variable, parameter or field should be a generic data class instance. For example, dataclassy uses these in the signatures of `as_dict`, `as_tuple` and `values` to show that these functions should be called on data class instances.
