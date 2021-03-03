@@ -14,8 +14,8 @@ DataClass = Any  # type hint for variables that should be data class instances
 
 
 class Hint:
-    """This type hint wrapper represents a field that is internal to the data class and is, for example, not
-    to be shown in a repr. Usage is like Internal[some_type]."""
+    """A type hint "wrapper". Wraps the actual type of a field to convey information about how it is intended
+    to be used, much like typing.ClassVar. Usage is like Hint[some_type]."""
     Wrapped = TypeVar('Wrapped')
 
     def __class_getitem__(cls, item: Wrapped) -> Union['Hint', Wrapped]:
@@ -30,10 +30,12 @@ class Hint:
                 (type(hint) is str and f'{cls.__name__}[' in hint))
 
 
-class Internal(Hint): pass
+class Internal(Hint):
+    """Marks that a field is internal to the class and so should not in a repr."""
 
 
-class Hashed(Hint): pass
+class Hashed(Hint):
+    """Marks that a field should be included in the generated __hash__."""
 
 
 class DataClassMeta(type):
