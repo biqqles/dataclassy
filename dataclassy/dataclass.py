@@ -51,7 +51,8 @@ class DataClassMeta(type):
         # determine whether a post-initialisation method was defined by the user
         init = dict_.get('__init__')
         post_init = (type(init) is Function and not hasattr(init, '__dataclass__')
-                     or type(dict_.get('__post_init__')) is Function)
+                     or any(type(b.get('__post_init__')) is Function
+                            for b in dataclass_bases + [dict_]))
 
         # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
         dict_.update(all_defaults)
