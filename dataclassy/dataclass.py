@@ -55,6 +55,7 @@ class DataClassMeta(type):
                             for b in dataclass_bases + [dict_]))
 
         # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
+        all_defaults.pop('__classcell__', None) #do not mess with dict_['__classcell__'] in case it exists in one of dataclass_bases but not in dict_
         dict_.update(all_defaults)
         dict_['__defaults__'] = all_defaults
         dict_['__annotations__'] = all_annotations
