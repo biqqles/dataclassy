@@ -60,7 +60,8 @@ class DataClassMeta(type):
         dict_['__dataclass__'] = options
 
         # delete what will become stale references so that Python creates new ones
-        del dict_['__dict__'], dict_['__weakref__']
+        dict_.pop('__dict__', None)
+        dict_.pop('__weakref__', None)
 
         # create/apply generated methods and attributes
         if options['slots']:
@@ -99,7 +100,7 @@ class DataClassMeta(type):
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
             dict_.setdefault('__hash__', __hash__)
 
-        return type.__new__(mcs, name, bases, dict_)
+        return super().__new__(mcs, name, bases, dict_)
 
     # noinspection PyMissingConstructor,PyUnresolvedReferences,PyTypeChecker,PyUnusedLocal
     def __init__(cls, *args, **kwargs):
