@@ -314,6 +314,17 @@ class Tests(unittest.TestCase):
         initinsubclass = InitInSubClass(0, 1)
         self.assertEqual(initinsubclass.c, 1)
 
+    def test_no_init_subclass(self):
+        @dataclass
+        class NoInit:
+            a: int
+            def __init__(self, c):
+                self.c = c
+        class NoInitInSubClass(NoInit):
+            b: int
+        noinitinsubclass = NoInitInSubClass(a=1, b=2, c=3)
+        self.assertEqual(noinitinsubclass.c, 3)
+
     def test_fields(self):
         """Test fields()."""
         self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')]))
