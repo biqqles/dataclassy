@@ -12,7 +12,7 @@ from collections import namedtuple
 from inspect import signature
 from sys import getsizeof
 
-from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
+from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal, DataClassMeta
 
 
 class Tests(unittest.TestCase):
@@ -342,6 +342,12 @@ class Tests(unittest.TestCase):
         self.assertEqual(replace(self.b, f=4), self.Beta(1, 2, 4))
         self.assertEqual(self.b, self.Beta(1, 2, 3))  # assert that the original instance remains unchanged
 
+    def test_meta_subclass(self):
+        """Test a subclass of DataClassMeta."""
+        class DataClassMetaSubclass(DataClassMeta):
+          pass
+        class UserDataClass(metaclass=DataClassMetaSubclass):
+          pass
 
 if __name__ == '__main__':
     unittest.main()
