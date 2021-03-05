@@ -12,7 +12,8 @@ from collections import namedtuple
 from inspect import signature
 from sys import getsizeof
 
-from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal, DataClassMeta
+from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
+from dataclassy.dataclass import DataClassMeta
 
 
 class Tests(unittest.TestCase):

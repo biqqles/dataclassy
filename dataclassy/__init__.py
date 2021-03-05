@@ -5,7 +5,7 @@
  file, You can obtain one at http://mozilla.org/MPL/2.0/.
 """
 from .decorator import dataclass, make_dataclass
-from .dataclass import DataClass, DataClassMeta, Internal
+from .dataclass import DataClass, Internal
 from .functions import fields, values, as_dict, as_tuple, replace
 
 # aliases intended for migration from dataclasses
@@ -14,7 +14,7 @@ asdict, astuple = as_dict, as_tuple
 # for the benefit of mypy --strict
 __all__ = (
     'dataclass', 'make_dataclass',
-    'DataClass', 'DataClassMeta', 'Internal',
+    'DataClass', 'Internal',
     'fields', 'values', 'as_dict', 'as_tuple', 'replace',
     'asdict', 'astuple',
 )
