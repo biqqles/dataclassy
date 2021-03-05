@@ -299,6 +299,29 @@ class Tests(unittest.TestCase):
         self.assertEqual(multiple.a, 1)
         self.assertEqual(multiple.h, [])
 
+    def test_multiple_inheritance_mro(self):
+        """Test that multiple inheritance gives the right mro."""
+        @dataclass
+        class A:
+            a: int = 2
+        @dataclass
+        class B:
+            a: int = 3
+        class C(A, B): pass
+        class D(A): pass
+        class E(B): pass
+        class F(D, E): pass
+        class G(D, E, B, A): pass
+        class H(D, E, C): pass
+        c = C()
+        self.assertEqual(c.a, 2)
+        f = F()
+        self.assertEqual(f.a, 2)
+        g = G()
+        self.assertEqual(g.a, 3)
+        h = H()
+        self.assertEqual(h.a, 2)
+
     def test_init_subclass(self):
         @dataclass
         class NoInit:
