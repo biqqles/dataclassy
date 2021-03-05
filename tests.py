@@ -291,11 +291,12 @@ class Tests(unittest.TestCase):
         class Multiple(self.Alpha, self.Epsilon):
             z: bool
 
-        self.assertEqual(str(signature(Multiple)), "(a: int, c: int, g: Tuple[tests.NT], "
-                                                   "h: List[ForwardRef('Epsilon')], z: bool, b: int = 2, _i: int = 0)")
+        self.assertEqual(str(signature(Multiple)), "(g: Tuple[tests.NT], "
+                                                   "h: List[ForwardRef('Epsilon')], a: int, c: int, "
+                                                   "z: bool, _i: int = 0, b: int = 2)")
 
         # verify initialiser is functional
-        multiple = Multiple(1, 2, tuple(), [], True)
+        multiple = Multiple(tuple(), [], 1, 2, True)
         self.assertEqual(multiple.a, 1)
         self.assertEqual(multiple.h, [])
 

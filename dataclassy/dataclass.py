@@ -40,10 +40,14 @@ class DataClassMeta(type):
         all_slots = set()
         options = dict(mcs.DEFAULT_OPTIONS)
 
-        dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
+        without_dc_meta = super().__new__(mcs, name, bases, dict_)
+
+        dataclass_bases = [vars(b) for b in reversed(without_dc_meta.__mro__) if hasattr(b, '__dataclass__')]
         for b in dataclass_bases + [dict_]:
             all_annotations.update(b.get('__annotations__', {}))
-            all_defaults.update(b.get('__defaults__', dict_))
+            b_defaults = {name: val for name, val in b.get('__class_defaults__', dict_).items() if name in all_annotations}
+            all_defaults.update(b_defaults)
+            if b is dict_: class_defaults = b_defaults
             all_slots.update(b.get('__slots__', set()))
             options.update(b.get('__dataclass__', {}))
         options.update(kwargs)
@@ -55,9 +59,8 @@ class DataClassMeta(type):
                             for b in dataclass_bases + [dict_]))
 
         # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
-        all_defaults.pop('__classcell__', None) #do not mess with dict_['__classcell__'] in case it exists in one of dataclass_bases but not in dict_
-        dict_.update(all_defaults)
         dict_['__defaults__'] = all_defaults
+        dict_['__class_defaults__'] = class_defaults
         dict_['__annotations__'] = all_annotations
         dict_['__dataclass__'] = options
 
@@ -70,7 +73,7 @@ class DataClassMeta(type):
             # if the slots option is added, specify them. Values with default values must only be present in slots,
             # not dict, otherwise Python will interpret them as read only
             for d in all_annotations.keys() & all_defaults.keys():
-                del dict_[d]
+                dict_.pop(d, None)
             dict_['__slots__'] = all_annotations.keys() - all_slots
         elif '__slots__' in dict_:
             # if the slots option gets removed, remove descriptors and __slots__
