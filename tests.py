@@ -363,11 +363,15 @@ class Tests(unittest.TestCase):
     def test_meta_subclass(self):
         """Test subclassing of DataClassMeta."""
         class DataClassMetaSubclass(DataClassMeta):
-            pass
+            def __new__(mcs, name, bases, dict_):
+                dict_["get_a"] = lambda self: self.a
+                return super().__new__(mcs, name, bases, dict_)
 
         @dataclass(meta=DataClassMetaSubclass)
         class UserDataClass:
-            pass
+            a: int
+
+        self.assertEqual(UserDataClass(a=2).get_a(), 2)
 
 
 if __name__ == '__main__':
