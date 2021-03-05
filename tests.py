@@ -300,31 +300,37 @@ class Tests(unittest.TestCase):
         self.assertEqual(multiple.h, [])
 
     def test_init_subclass(self):
+        """Test custom init when it is defined in a subclass."""
         @dataclass
         class NoInit:
             a: int
-        @dataclass
+
         class NoInitInSubClass(NoInit):
             b: int
+
         class InitInSubClass(NoInit):
             def __init__(self, c):
                 self.c = c
 
         self.assertTrue(hasattr(InitInSubClass, "__post_init__"))
         self.assertFalse(hasattr(NoInitInSubClass, "__post_init__"))
-        initinsubclass = InitInSubClass(0, 1)
-        self.assertEqual(initinsubclass.c, 1)
+        init_in_sub_class = InitInSubClass(0, 1)
+        self.assertEqual(init_in_sub_class.c, 1)
 
     def test_no_init_subclass(self):
+        """Test custom init when it is defined in a superclass."""
         @dataclass
-        class NoInit:
+        class HasInit:
             a: int
+
             def __init__(self, c):
                 self.c = c
-        class NoInitInSubClass(NoInit):
+
+        class NoInitInSubClass(HasInit):
             b: int
-        noinitinsubclass = NoInitInSubClass(a=1, b=2, c=3)
-        self.assertEqual(noinitinsubclass.c, 3)
+
+        no_init_in_sub_class = NoInitInSubClass(a=1, b=2, c=3)
+        self.assertEqual(no_init_in_sub_class.c, 3)
 
     def test_fields(self):
         """Test fields()."""
@@ -355,11 +361,14 @@ class Tests(unittest.TestCase):
         self.assertEqual(self.b, self.Beta(1, 2, 3))  # assert that the original instance remains unchanged
 
     def test_meta_subclass(self):
-        """Test a subclass of DataClassMeta."""
+        """Test subclassing of DataClassMeta."""
         class DataClassMetaSubclass(DataClassMeta):
-          pass
-        class UserDataClass(metaclass=DataClassMetaSubclass):
-          pass
+            pass
+
+        @dataclass(meta=DataClassMetaSubclass)
+        class UserDataClass:
+            pass
+
 
 if __name__ == '__main__':
     unittest.main()
