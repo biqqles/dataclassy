@@ -373,6 +373,45 @@ class Tests(unittest.TestCase):
 
         self.assertEqual(UserDataClass(a=2).get_a(), 2)
 
+    def test_classcell(self):
+        """
+        Test that __classcell__ gets passed to type.__new__
+        if and only if it's supposed to.
+
+        __classcell__ gets generated whenever a class uses super().
+        """
+        @dataclass
+        class Parent:
+            a: int
+            def f(self):
+                return self.a
+        #creating the Child1 class will fail in python >= 3.8 if __classcell__ doesn't get propagated
+        #in < 3.8, it will give a DeprecationWarning, but calling f will give an error
+        class Child1(Parent):
+            def f(self):
+                self.a += 1
+                return super().f()
+        child1 = Child1(3)
+        self.assertEqual(child1.f(), 4)
+        class Child2(Parent):
+            def f(self):
+                self.a += 2
+                return super().f()
+        child2 = Child2(3)
+        self.assertEqual(child2.f(), 5)
+        class MultipleInheritance(Child1, Child2):
+            pass
+        multiple_inheritance = MultipleInheritance(3)
+
+        #if __classcell__ from a parent gets passed to type.__new__
+        #when there's no __classcell__ in the child, then this gives
+        #an infinite recursion error.
+
+        #if f is given from the parent to the child
+        #when there's no f in the child, then
+        #it returns 5 instead of 6, because MultipleInheritance explicitly
+        #gets Child2's f, and super() redirects to Parent's f, skipping Child1
+        self.assertEqual(multiple_inheritance.f(), 6)
 
 if __name__ == '__main__':
     unittest.main()

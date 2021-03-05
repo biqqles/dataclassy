@@ -52,6 +52,7 @@ class DataClassMeta(type):
         options.update(kwargs)
 
         # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
+        all_defaults.pop('__classcell__', None)
         dict_.update(all_defaults)
         dict_['__defaults__'] = all_defaults
         dict_['__annotations__'] = all_annotations
@@ -60,7 +61,6 @@ class DataClassMeta(type):
         # delete what will become stale references so that Python creates new ones
         dict_.pop('__dict__', None)
         dict_.pop('__weakref__', None)
-        dict_.pop('__classcell__', None)
 
         # create/apply generated methods and attributes
         if options['slots']:
