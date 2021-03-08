@@ -44,7 +44,7 @@ class DataClassMeta(type):
         dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
         for b in dataclass_bases + [dict_]:
             all_annotations.update(b.get('__annotations__', {}))
-            all_defaults.update(b.get('__defaults__', dict_))
+            all_defaults.update({f: v for f, v in b.get('__defaults__', dict_).items() if f in all_annotations})
             all_slots.update(b.get('__slots__', set()))
             options.update(b.get('__dataclass__', {}))
 
@@ -52,7 +52,6 @@ class DataClassMeta(type):
         options.update(kwargs)
 
         # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
-        all_defaults.pop('__classcell__', None)
         dict_.update(all_defaults)
         dict_['__defaults__'] = all_defaults
         dict_['__annotations__'] = all_annotations
@@ -66,7 +65,7 @@ class DataClassMeta(type):
         if options['slots']:
             # if the slots option is added, specify them. Values with default values must only be present in slots,
             # not dict, otherwise Python will interpret them as read only
-            for d in all_annotations.keys() & all_defaults.keys():
+            for d in all_defaults.keys():
                 del dict_[d]
             dict_['__slots__'] = all_annotations.keys() - all_slots
         elif '__slots__' in dict_:
