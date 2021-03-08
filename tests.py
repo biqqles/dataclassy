@@ -6,7 +6,7 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple, Optional, ForwardRef
+from typing import Dict, List, Tuple, Optional, ForwardRef, Union
 import unittest
 from collections import namedtuple
 from inspect import signature
@@ -85,9 +85,12 @@ class Tests(unittest.TestCase):
 
     def test_internal(self):
         """Test the internal type hint."""
-        self.assertTrue(Internal.is_internal(Internal[int]))
-        self.assertTrue(Internal.is_internal('Internal[int]'))
-        self.assertFalse(Internal.is_internal(int))
+        self.assertTrue(Internal.is_hinted(Internal[int]))
+        self.assertTrue(Internal.is_hinted('Internal[int]'))
+        self.assertTrue(Internal.is_hinted(Internal[Union[int, str]]))
+        self.assertTrue(Internal.is_hinted('Internal[Callable[[int], Tuple[int, int]]]'))
+        self.assertFalse(Internal.is_hinted(int))
+        self.assertFalse(Internal.is_hinted(Union[int, str]))
 
     def test_init(self):
         """Test correct generation of a __new__ method."""
