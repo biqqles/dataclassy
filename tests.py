@@ -6,13 +6,14 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple, Optional, ForwardRef, Union
+from typing import Dict, List, Tuple, Optional, ForwardRef
 import unittest
 from collections import namedtuple
 from inspect import signature
 from sys import getsizeof
 
 from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
+from dataclassy.dataclass import DataClassMeta
 
 
 class Tests(unittest.TestCase):
@@ -298,6 +299,39 @@ class Tests(unittest.TestCase):
         self.assertEqual(multiple.a, 1)
         self.assertEqual(multiple.h, [])
 
+    def test_init_subclass(self):
+        """Test custom init when it is defined in a subclass."""
+        @dataclass
+        class NoInit:
+            a: int
+
+        class NoInitInSubClass(NoInit):
+            b: int
+
+        class InitInSubClass(NoInit):
+            def __init__(self, c):
+                self.c = c
+
+        self.assertTrue(hasattr(InitInSubClass, "__post_init__"))
+        self.assertFalse(hasattr(NoInitInSubClass, "__post_init__"))
+        init_in_sub_class = InitInSubClass(0, 1)
+        self.assertEqual(init_in_sub_class.c, 1)
+
+    def test_no_init_subclass(self):
+        """Test custom init when it is defined in a superclass."""
+        @dataclass
+        class HasInit:
+            a: int
+
+            def __init__(self, c):
+                self.c = c
+
+        class NoInitInSubClass(HasInit):
+            b: int
+
+        no_init_in_sub_class = NoInitInSubClass(a=1, b=2, c=3)
+        self.assertEqual(no_init_in_sub_class.c, 3)
+
     def test_fields(self):
         """Test fields()."""
         self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')]))
@@ -325,6 +359,63 @@ class Tests(unittest.TestCase):
         """Test replace()."""
         self.assertEqual(replace(self.b, f=4), self.Beta(1, 2, 4))
         self.assertEqual(self.b, self.Beta(1, 2, 3))  # assert that the original instance remains unchanged
+
+    def test_meta_subclass(self):
+        """Test subclassing of DataClassMeta."""
+
+        class DataClassMetaSubclass(DataClassMeta):
+            def __new__(mcs, name, bases, dict_):
+                dict_["get_a"] = lambda self: self.a
+                return super().__new__(mcs, name, bases, dict_)
+
+        @dataclass(meta=DataClassMetaSubclass)
+        class UserDataClass:
+            a: int
+
+        self.assertEqual(UserDataClass(a=2).get_a(), 2)
+
+    def test_classcell(self):
+        """Test that __classcell__ gets passed to type.__new__ if and only if it's supposed to. (CURRENTLY FAILS.)
+        __classcell__ gets generated whenever a class uses super()."""
+        @dataclass
+        class Parent:
+            a: int
+
+            def f(self):
+                return self.a
+
+        # creating the Child1 class will fail in python >= 3.8 if __classcell__ doesn't get propagated
+        # in < 3.8, it will give a DeprecationWarning, but calling f will give an error
+        class Child1(Parent):
+            def f(self):
+                self.a += 1
+                return super().f()
+
+        child1 = Child1(3)
+        self.assertEqual(child1.f(), 4)
+
+        class Child2(Parent):
+            def f(self):
+                self.a += 2
+                return super().f()
+
+        child2 = Child2(3)
+        self.assertEqual(child2.f(), 5)
+
+        class MultipleInheritance(Child1, Child2):
+            pass
+
+        multiple_inheritance = MultipleInheritance(3)
+
+        # if __classcell__ from a parent gets passed to type.__new__
+        # when there's no __classcell__ in the child, then this gives
+        # an infinite recursion error.
+
+        # if f is given from the parent to the child
+        # when there's no f in the child, then
+        # it returns 5 instead of 6, because MultipleInheritance explicitly
+        # gets Child2's f, and super() redirects to Parent's f, skipping Child1
+        self.assertEqual(multiple_inheritance.f(), 6)
 
 
 if __name__ == '__main__':
