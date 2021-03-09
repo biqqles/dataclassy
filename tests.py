@@ -85,9 +85,12 @@ class Tests(unittest.TestCase):
 
     def test_internal(self):
         """Test the internal type hint."""
-        self.assertTrue(Internal.is_internal(Internal[int]))
-        self.assertTrue(Internal.is_internal('Internal[int]'))
-        self.assertFalse(Internal.is_internal(int))
+        self.assertTrue(Internal.is_hinted(Internal[int]))
+        self.assertTrue(Internal.is_hinted('Internal[int]'))
+        self.assertTrue(Internal.is_hinted(Internal[Union[int, str]]))
+        self.assertTrue(Internal.is_hinted('Internal[Callable[[int], Tuple[int, int]]]'))
+        self.assertFalse(Internal.is_hinted(int))
+        self.assertFalse(Internal.is_hinted(Union[int, str]))
 
     def test_init(self):
         """Test correct generation of a __new__ method."""
@@ -324,31 +327,37 @@ class Tests(unittest.TestCase):
         self.assertEqual(h.a, 2)
 
     def test_init_subclass(self):
+        """Test custom init when it is defined in a subclass."""
         @dataclass
         class NoInit:
             a: int
-        @dataclass
+
         class NoInitInSubClass(NoInit):
             b: int
+
         class InitInSubClass(NoInit):
             def __init__(self, c):
                 self.c = c
 
         self.assertTrue(hasattr(InitInSubClass, "__post_init__"))
         self.assertFalse(hasattr(NoInitInSubClass, "__post_init__"))
-        initinsubclass = InitInSubClass(0, 1)
-        self.assertEqual(initinsubclass.c, 1)
+        init_in_sub_class = InitInSubClass(0, 1)
+        self.assertEqual(init_in_sub_class.c, 1)
 
     def test_no_init_subclass(self):
+        """Test custom init when it is defined in a superclass."""
         @dataclass
-        class NoInit:
+        class HasInit:
             a: int
+
             def __init__(self, c):
                 self.c = c
-        class NoInitInSubClass(NoInit):
+
+        class NoInitInSubClass(HasInit):
             b: int
-        noinitinsubclass = NoInitInSubClass(a=1, b=2, c=3)
-        self.assertEqual(noinitinsubclass.c, 3)
+
+        no_init_in_sub_class = NoInitInSubClass(a=1, b=2, c=3)
+        self.assertEqual(no_init_in_sub_class.c, 3)
 
     def test_fields(self):
         """Test fields()."""
@@ -379,11 +388,61 @@ class Tests(unittest.TestCase):
         self.assertEqual(self.b, self.Beta(1, 2, 3))  # assert that the original instance remains unchanged
 
     def test_meta_subclass(self):
-        """Test a subclass of DataClassMeta."""
+        """Test subclassing of DataClassMeta."""
+
         class DataClassMetaSubclass(DataClassMeta):
-          pass
-        class UserDataClass(metaclass=DataClassMetaSubclass):
-          pass
+            def __new__(mcs, name, bases, dict_):
+                dict_["get_a"] = lambda self: self.a
+                return super().__new__(mcs, name, bases, dict_)
+
+        @dataclass(meta=DataClassMetaSubclass)
+        class UserDataClass:
+            a: int
+
+        self.assertEqual(UserDataClass(a=2).get_a(), 2)
+
+    def test_classcell(self):
+        """Test that __classcell__ gets passed to type.__new__ if and only if it's supposed to. (CURRENTLY FAILS.)
+        __classcell__ gets generated whenever a class uses super()."""
+        @dataclass
+        class Parent:
+            a: int
+
+            def f(self):
+                return self.a
+
+        # creating the Child1 class will fail in python >= 3.8 if __classcell__ doesn't get propagated
+        # in < 3.8, it will give a DeprecationWarning, but calling f will give an error
+        class Child1(Parent):
+            def f(self):
+                self.a += 1
+                return super().f()
+
+        child1 = Child1(3)
+        self.assertEqual(child1.f(), 4)
+
+        class Child2(Parent):
+            def f(self):
+                self.a += 2
+                return super().f()
+
+        child2 = Child2(3)
+        self.assertEqual(child2.f(), 5)
+
+        class MultipleInheritance(Child1, Child2):
+            pass
+
+        multiple_inheritance = MultipleInheritance(3)
+
+        # if __classcell__ from a parent gets passed to type.__new__
+        # when there's no __classcell__ in the child, then this gives
+        # an infinite recursion error.
+
+        # if f is given from the parent to the child
+        # when there's no f in the child, then
+        # it returns 5 instead of 6, because MultipleInheritance explicitly
+        # gets Child2's f, and super() redirects to Parent's f, skipping Child1
+        self.assertEqual(multiple_inheritance.f(), 6)
 
 if __name__ == '__main__':
     unittest.main()

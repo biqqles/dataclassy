@@ -59,7 +59,7 @@ def replace(dataclass: DataClass, **changes) -> DataClass:
 def _filter_annotations(annotations: Dict[str, Type], internals: bool) -> Dict[str, Type]:
     """Filter an annotations dict for to remove or keep internal fields."""
     return annotations if internals else {f: a for f, a in annotations.items()
-                                          if not f.startswith('_') and not Internal.is_internal(a)}
+                                          if not f.startswith('_') and not Internal.is_hinted(a)}
 
 
 def _recurse_structure(var: Any, iter_proc: Callable) -> Any:
