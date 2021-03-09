@@ -51,9 +51,16 @@ class DataClassMeta(type):
         options = dict(mcs.DEFAULT_OPTIONS)
         post_init = False  # whether a post-initialisation method was defined by the user
 
-        without_dc_meta = super().__new__(mcs, name, bases, dict_)
+        temp_dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
+        temp_dict = {
+            **dict_,
+            '__slots__': set.union(*(b.get('__slots__', set()) for b in temp_dataclass_bases + [dict_])),
+        }
+        for s in temp_dict['__slots__']:
+            temp_dict.pop(s, None)
+        without_dc_meta = super().__new__(mcs, name, bases, temp_dict)
 
-        dataclass_bases = [vars(b) for b in reversed(without_dc_meta.__mro__) if hasattr(b, '__dataclass__')]
+        dataclass_bases = [vars(b) for b in reversed(without_dc_meta.__mro__) if hasattr(b, '__dataclass__') if b is not without_dc_meta]
         for b in dataclass_bases + [dict_]:
             all_annotations.update(b.get('__annotations__', {}))
             b_defaults = {name: val for name, val in b.get('__class_defaults__', dict_).items() if name in all_annotations}
