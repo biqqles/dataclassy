@@ -178,6 +178,23 @@ class Tests(unittest.TestCase):
         e = self.Epsilon(1, 2, 3)
         self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
 
+    def test_slots_inheritance(self):
+        """Test that inheritance works correctly with __slots__ enabled."""
+        @dataclass(slots=True)
+        class Parent:
+            a: int
+        class Child1(Parent):
+            b: int = 2
+        class Child2(Parent):
+            a = 3
+        class Grandchild(Child1, Child2):
+            b = 4
+            c: int
+        @dataclass(slots=False)
+        class GrandchildNoSlots(Child1, Child2):
+            b = 5
+            c: int
+
     def test_frozen(self):
         """Test correct generation of __setattr__ and __delattr__ for a frozen class."""
         @dataclass(frozen=True)
