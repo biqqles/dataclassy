@@ -55,7 +55,7 @@ class DataClassMeta(type):
         for b in dataclass_bases + [dict_]:
             all_annotations.update(b.get('__annotations__', {}))
             all_defaults.update({f: v for f, v in b.get('__defaults__', dict_).items() if f in all_annotations})
-            all_slots.update(b.get('__slots__', set()))
+            all_slots.update(b.get('__slots__', []))
             options.update(b.get('__dataclass__', {}))
 
             post_init = post_init or is_user_func(b.get('__init__')) or is_user_func(b.get('__post_init__'))
