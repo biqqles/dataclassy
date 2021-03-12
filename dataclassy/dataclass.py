@@ -127,7 +127,7 @@ def generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
     class. When the data class is initialised, arguments to this function are applied to the fields of the new instance.
     A user-defined __init__, if present, must be aliased to avoid conflicting."""
     arguments = [a for a in annotations if a not in defaults]
-    default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
+    default_arguments = [f'{a}={a}' for a in defaults]
     args = ['*args'] if user_init else []
     kwargs = ['**kwargs'] if user_init or gen_kwargs else []
 
