@@ -63,10 +63,10 @@ class DataClassMeta(type):
         dataclass_bases = [vars(b) for b in reversed(without_dc_meta.__mro__) if hasattr(b, '__dataclass__') if b is not without_dc_meta]
         for b in dataclass_bases + [dict_]:
             all_annotations.update(b.get('__annotations__', {}))
-            b_defaults = {name: val for name, val in b.get('__class_defaults__', dict_).items() if name in all_annotations}
+            b_defaults = {f: v for f, v in b.get('__class_defaults__', dict_).items() if f in all_annotations}
             all_defaults.update(b_defaults)
             if b is dict_: class_defaults = b_defaults
-            all_slots.update(b.get('__slots__', set()))
+            all_slots.update(b.get('__slots__', []))
             options.update(b.get('__dataclass__', {}))
 
             post_init = post_init or is_user_func(b.get('__init__')) or is_user_func(b.get('__post_init__'))
@@ -138,7 +138,7 @@ def generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
     class. When the data class is initialised, arguments to this function are applied to the fields of the new instance.
     A user-defined __init__, if present, must be aliased to avoid conflicting."""
     arguments = [a for a in annotations if a not in defaults]
-    default_arguments = [f'{a}={a}' for a in annotations if a in defaults]
+    default_arguments = [f'{a}={a}' for a in defaults]
     args = ['*args'] if user_init else []
     kwargs = ['**kwargs'] if user_init or gen_kwargs else []
 

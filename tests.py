@@ -367,14 +367,19 @@ class Tests(unittest.TestCase):
         class HasInit:
             a: int
 
-            def __init__(self, c):
-                self.c = c
+            def __init__(self, d):
+                self.d = d
 
         class NoInitInSubClass(HasInit):
             b: int
 
-        no_init_in_sub_class = NoInitInSubClass(a=1, b=2, c=3)
-        self.assertEqual(no_init_in_sub_class.c, 3)
+        class NoInitInSubSubClass(NoInitInSubClass):
+            c: int
+
+        no_init_in_sub_class = NoInitInSubClass(a=1, b=2, d=3)
+        self.assertEqual(no_init_in_sub_class.d, 3)
+        no_init_in_sub_sub_class = NoInitInSubSubClass(a=1, b=2, c=3, d=4)
+        self.assertEqual(no_init_in_sub_sub_class.d, 4)
 
     def test_fields(self):
         """Test fields()."""
