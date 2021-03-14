@@ -8,7 +8,7 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType as Function
-from typing import Any, Dict, Hashable, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
 DataClass = Any  # type hint for variables that should be data class instances
 
@@ -25,7 +25,7 @@ class Hint:
 
     @classmethod
     def is_hinted(cls, hint: Union[Type, str]) -> bool:
-        """Check whether a type hint represents Internal."""
+        """Check whether a type hint represents this Hint."""
         return (hasattr(hint, '__args__') and cls in hint.__args__ or
                 (type(hint) is str and f'{cls.__name__}[' in hint))
 
@@ -106,7 +106,7 @@ class DataClassMeta(type):
             dict_.setdefault('__lt__', __lt__)
 
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
-            dict_.setdefault('__hash__', __hash__)
+            dict_.setdefault('__hash__', generate_hash(all_annotations))
 
         return super().__new__(mcs, name, bases, dict_)
 
@@ -153,6 +153,14 @@ def generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
     return eval_function('__init__', lines, annotations, defaults, default_names)
 
 
+def generate_hash(annotations: Dict) -> Function:
+    """Generate a __hash__ method for a data class. The hashed value consists of a tuple of the instance's type
+    followed by any fields marked as "Hashed"."""
+    hash_of = ', '.join(['self.__class__', *(f'self.{f}' for f, h in annotations.items() if Hashed.is_hinted(h))])
+    return eval_function('__hash__', ['def __hash__(self):',
+                                      f'return hash(({hash_of}))'], dict(self=DataClass), {}, {})
+
+
 def eval_function(name: str, lines: List[str], annotations: Dict, locals_: Dict, globals_: Dict) -> Function:
     """Evaluate a function definition, returning the resulting object."""
     exec('\n\t'.join(lines), globals_, locals_)
@@ -180,11 +188,6 @@ def __lt__(self: DataClass, other: DataClass):
     if isinstance(other, type(self)):
         return self.__tuple__ < other.__tuple__
     return NotImplemented
-
-
-def __hash__(self):
-    # currently not ideal since gives no warning if a field expected to be hashable is not
-    return hash((type(self), *(v for v in self.__tuple__ if isinstance(v, Hashable))))
 
 
 def __iter__(self):

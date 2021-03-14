@@ -12,7 +12,7 @@ from collections import namedtuple
 from inspect import signature
 from sys import getsizeof
 
-from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal
+from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal, Hashed
 from dataclassy.dataclass import DataClassMeta
 
 
@@ -159,17 +159,24 @@ class Tests(unittest.TestCase):
         """Test correct generation of a __hash__ method."""
         @dataclass(eq=True, frozen=True)
         class Hashable:
-            a: int
+            a: Hashed[int]
             b: List[int] = [2]
 
         @dataclass(unsafe_hash=True)
         class AlsoHashable:
-            c: int
+            c: Hashed[int]
 
         self.assertFalse(hash(Hashable(1)) == hash(AlsoHashable(1)))
         d = {Hashable(1): 1, Hashable(2): 2, AlsoHashable(1): 3}
         self.assertEqual(d[Hashable(1)], 1)
         self.assertEqual(hash((Hashable, 1)), hash(Hashable(1)))
+
+        @dataclass(unsafe_hash=True)
+        class Invalid:
+            d: Hashed[List[str]]
+
+        with self.assertRaises(TypeError):
+            hash(Invalid([]))
 
     def test_slots(self):
         """Test correct generation and efficacy of a __slots__ attribute."""
