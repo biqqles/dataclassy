@@ -41,7 +41,7 @@ class Hashed(Hint):
 class DataClassMeta(type):
     """The metaclass for a data class."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False,
-                           order=False, unsafe_hash=True, hide_internals=True)
+                           order=False, unsafe_hash=True, hide_internals=True, _post_init=False)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         # collect annotations, defaults, slots and options from this class' ancestors, in definition order
@@ -49,7 +49,6 @@ class DataClassMeta(type):
         all_defaults = {}
         all_slots = set()
         options = dict(mcs.DEFAULT_OPTIONS)
-        post_init: Optional[Function] = None  # a post-initialisation method if defined by the user
 
         dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
         for b in dataclass_bases + [dict_]:
@@ -58,7 +57,9 @@ class DataClassMeta(type):
             all_slots.update(b.get('__slots__', []))
             options.update(b.get('__dataclass__', {}))
 
-            post_init = post_init or user_func(b.get('__init__')) or user_func(b.get('__post_init__'))
+        for b in dataclass_bases + [dict_]:
+            options["_post_init"] = options["_post_init"] or b.get('__dataclass__', {}).get("_post_init", False) or user_func(b.get('__init__')) or user_func(b.get('__post_init__'))
+
         options.update(kwargs)
 
         # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
@@ -85,9 +86,9 @@ class DataClassMeta(type):
             del dict_['__slots__']
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
-            if post_init:
-                dict_['__post_init__'] = dict_.pop('__init__', post_init)
-            dict_['__init__'] = generate_init(all_annotations, all_defaults, bool(post_init),
+            if options["_post_init"] and '__init__' in dict_:
+                dict_['__post_init__'] = dict_.pop('__init__')
+            dict_['__init__'] = generate_init(all_annotations, all_defaults, bool(options["_post_init"]),
                                               options['kwargs'], options['frozen'])
 
         if options['repr']:
