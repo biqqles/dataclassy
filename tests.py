@@ -432,6 +432,31 @@ class Tests(unittest.TestCase):
         # gets Child2's f, and super() redirects to Parent's f, skipping Child1
         self.assertEqual(multiple_inheritance.f(), 6)
 
+    def test_multiple_inheritance_post_init(self):
+        @dataclass
+        class Grandparent:
+            a: int
+            def __post_init__(self):
+                pass
+        class Parent1(Grandparent):
+            b: int
+            def __post_init__(self, c, *args, **kwargs):
+                self.c = c
+                super().__post_init__(*args, **kwargs)
+        class Parent2(Grandparent):
+            d: int
+            def __post_init__(self, e, *args, **kwargs):
+                self.e = e
+                super().__post_init__(*args, **kwargs)
+        class Child(Parent1, Parent2):
+            pass
+
+        child = Child(a=1, b=2, c=3, d=4, e=5)
+        self.assertEqual(child.a, 1)
+        self.assertEqual(child.b, 2)
+        self.assertEqual(child.c, 3)
+        self.assertEqual(child.d, 4)
+        self.assertEqual(child.e, 5)
 
 if __name__ == '__main__':
     unittest.main()
