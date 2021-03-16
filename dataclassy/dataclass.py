@@ -77,7 +77,7 @@ class DataClassMeta(type):
             # not dict, otherwise Python will interpret them as read only
             for d in all_defaults.keys():
                 del dict_[d]
-            dict_['__slots__'] = all_annotations.keys() - all_slots
+            dict_['__slots__'] = tuple(all_annotations.keys() - all_slots)
         elif '__slots__' in dict_:
             # if the slots option gets removed, remove descriptors and __slots__
             for d in all_annotations.keys() - all_defaults.keys() & dict_.keys():
