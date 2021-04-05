@@ -390,7 +390,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(UserDataClass(a=2).get_a(), 2)
 
     def test_classcell(self):
-        """Test that __classcell__ gets passed to type.__new__ if and only if it's supposed to. (CURRENTLY FAILS.)
+        """Test that __classcell__ gets passed to type.__new__ if and only if it's supposed to.
         __classcell__ gets generated whenever a class uses super()."""
         @dataclass
         class Parent:
@@ -431,6 +431,24 @@ class Tests(unittest.TestCase):
         # it returns 5 instead of 6, because MultipleInheritance explicitly
         # gets Child2's f, and super() redirects to Parent's f, skipping Child1
         self.assertEqual(multiple_inheritance.f(), 6)
+
+    def test_inheritance(self):
+        """Test that method inheritance works as expected."""
+        @dataclass
+        class Parent:
+            a: int
+
+            def __hash__(self):
+                return hash(self.a)
+
+            def user_method(self):
+                return
+
+        class Child(Parent):
+            pass
+
+        self.assertIs(Parent.__hash__, Child.__hash__)
+        self.assertIs(Parent.user_method, Child.user_method)
 
 
 if __name__ == '__main__':
