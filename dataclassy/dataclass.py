@@ -39,12 +39,20 @@ class Hashed(Hint):
 
 
 class DataClassMeta(type):
-    """The metaclass for a data class."""
+    """The metaclass that implements data class behaviour."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False,
                            order=False, unsafe_hash=True, hide_internals=True)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
+        """Create a new data class."""
+
+        # delete what may become stale references so that Python creates new ones
+
+        dict_.pop('__dict__', None)
+        dict_ = {f: v for f, v in dict_.items() if type(v).__name__ != 'member_descriptor'}
+
         # collect annotations, defaults, slots and options from this class' ancestors, in definition order
+
         all_annotations = {}
         all_defaults = {}
         all_slots = set()
@@ -54,35 +62,37 @@ class DataClassMeta(type):
         dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
         for b in dataclass_bases + [dict_]:
             all_annotations.update(b.get('__annotations__', {}))
-            all_defaults.update(b.get('__defaults__', dict_))
+            all_defaults.update(b.get('__defaults__', {}))
             all_slots.update(b.get('__slots__', set()))
             options.update(b.get('__dataclass__', {}))
 
-            post_init = post_init or user_func(b.get('__init__')) or user_func(b.get('__post_init__'))
-        options.update(kwargs)
+            # this is a bit ugly. Add user-defined magic methods to dict_ so that we know not to replace them
+            # with generated methods. Another way to do this would be to store attributes separately to dict_.
+            # The only side effect of this way is that super() will not work in matching methods.
+            dict_.update({f: v for f, v in b.items() if user_func(v) and f.startswith('__')})
 
-        # fill out this class' dict and store defaults, annotations and decorator options for future subclasses
-        all_defaults.pop('__classcell__', None)
-        dict_.update(all_defaults)
+            post_init = post_init or user_func(b.get('__init__')) or user_func(b.get('__post_init__'))
+
+        # update options and defaults for *this* class
+
+        options.update(kwargs)
+        all_defaults.update({f: v for f, v in dict_.items() if f in all_annotations})
+
+        # store defaults, annotations and decorator options for future subclasses
         dict_['__defaults__'] = all_defaults
         dict_['__annotations__'] = all_annotations
         dict_['__dataclass__'] = options
 
-        # delete what will become stale references so that Python creates new ones
-        dict_.pop('__dict__', None)
-        dict_.pop('__weakref__', None)
+        # create and apply generated methods and attributes
 
-        # create/apply generated methods and attributes
         if options['slots']:
-            # if the slots option is added, specify them. Values with default values must only be present in slots,
+            # if the slots option is added, add __slots__. Values with default values must only be present in slots,
             # not dict, otherwise Python will interpret them as read only
-            for d in all_annotations.keys() & all_defaults.keys():
+            for d in all_annotations.keys() & dict_.keys():
                 del dict_[d]
             dict_['__slots__'] = tuple(all_annotations.keys() - all_slots)
         elif '__slots__' in dict_:
-            # if the slots option gets removed, remove descriptors and __slots__
-            for d in all_annotations.keys() - all_defaults.keys() & dict_.keys():
-                del dict_[d]
+            # if the slots option gets removed, remove __slots__
             del dict_['__slots__']
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
