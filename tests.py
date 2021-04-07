@@ -447,8 +447,13 @@ class Tests(unittest.TestCase):
         class Child(Parent):
             pass
 
+        class Grandchild(Child):
+            def __hash__(self):
+                return 2 * super().__hash__()
+
         self.assertIs(Parent.__hash__, Child.__hash__)
         self.assertIs(Parent.user_method, Child.user_method)
+        self.assertEqual(hash(Parent(1)) * 2, hash(Grandchild(1)))
 
 
 if __name__ == '__main__':
