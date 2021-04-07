@@ -78,6 +78,7 @@ class DataClassMeta(type):
         all_defaults.update({f: v for f, v in dict_.items() if f in all_annotations})
 
         # store defaults, annotations and decorator options for future subclasses
+
         dict_['__defaults__'] = all_defaults
         dict_['__annotations__'] = all_annotations
         dict_['__dataclass__'] = options
