@@ -69,7 +69,7 @@ class DataClassMeta(type):
             # this is a bit ugly. Add user-defined magic methods to dict_ so that we know not to replace them
             # with generated methods. Another way to do this would be to store attributes separately to dict_.
             # The only side effect of this way is that super() will not work in matching methods.
-            dict_.update({f: v for f, v in b.items() if user_func(v) and f.startswith('__')})
+            dict_.update({f: v for f, v in b.items() if user_func(v) and f.startswith('__') and f.endswith('__')})
 
             post_init = post_init or user_func(b.get('__init__')) or user_func(b.get('__post_init__'))
 
