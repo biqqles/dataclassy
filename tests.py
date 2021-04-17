@@ -6,7 +6,13 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple, Optional, ForwardRef, Union
+from typing import Dict, List, Tuple, Optional, Union
+
+try:
+    from typing import ForwardRef
+except ImportError:  # Python 3.6
+    from typing import _ForwardRef as ForwardRef
+
 import unittest
 from collections import namedtuple
 from inspect import signature
