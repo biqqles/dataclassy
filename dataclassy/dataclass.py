@@ -8,21 +8,24 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType as Function
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, List, Type, TypeVar, Union
 
 DataClass = Any  # type hint for variables that should be data class instances
 
 
-class Hint:
-    """A type hint "wrapper". Wraps the actual type of a field to convey information about how it is intended
-    to be used, much like typing.ClassVar. Usage is like Hint[some_type]."""
+class HintMeta(type):
+    """Metaclass for Hint. Used because __class_getitem__ is not recognised in Python 3.6."""
     Wrapped = TypeVar('Wrapped')
 
-    def __class_getitem__(cls, item: Wrapped) -> Union['Hint', Wrapped]:
+    def __getitem__(cls, item: Wrapped) -> Union['Hint', Wrapped]:
         """Create a new Union of the wrapper and the wrapped type. Union is smart enough to flatten nested
         unions automatically."""
         return Union[cls, item]
 
+
+class Hint(metaclass=HintMeta):
+    """A type hint "wrapper". Wraps the actual type of a field to convey information about how it is intended
+    to be used, much like typing.ClassVar. Usage is like Hint[some_type]."""
     @classmethod
     def is_hinted(cls, hint: Union[Type, str]) -> bool:
         """Check whether a type hint represents this Hint."""
