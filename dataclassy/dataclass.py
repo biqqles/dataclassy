@@ -26,7 +26,7 @@ class Hint:
     @classmethod
     def is_hinted(cls, hint: Union[Type, str]) -> bool:
         """Check whether a type hint represents this Hint."""
-        return (hasattr(hint, '__args__') and cls in hint.__args__ or
+        return (hasattr(hint, '__args__') and hint.__args__ and cls in hint.__args__ or
                 (type(hint) is str and f'{cls.__name__}[' in hint))
 
 
