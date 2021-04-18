@@ -13,8 +13,10 @@ from typing import Any, Dict, List, Type, TypeVar, Union
 DataClass = Any  # type hint for variables that should be data class instances
 
 
-class HintMeta(type):
-    """Metaclass for Hint. Used because __class_getitem__ is not recognised in Python 3.6."""
+class Hint(type):
+    """Metaclass for a type hint "wrapper". Wraps the actual type of a field to convey information about how it is
+    intended to be used, much like typing.ClassVar. Usage is like Hint[some_type].
+    This is a metaclass because __class_getitem__ is not recognised in Python 3.6."""
     Wrapped = TypeVar('Wrapped')
 
     def __getitem__(cls, item: Wrapped) -> Union['Hint', Wrapped]:
@@ -22,22 +24,17 @@ class HintMeta(type):
         unions automatically."""
         return Union[cls, item]
 
-
-class Hint(metaclass=HintMeta):
-    """A type hint "wrapper". Wraps the actual type of a field to convey information about how it is intended
-    to be used, much like typing.ClassVar. Usage is like Hint[some_type]."""
-    @classmethod
     def is_hinted(cls, hint: Union[Type, str]) -> bool:
         """Check whether a type hint represents this Hint."""
         return (hasattr(hint, '__args__') and cls in hint.__args__ or
                 (type(hint) is str and f'{cls.__name__}[' in hint))
 
 
-class Internal(Hint):
+class Internal(metaclass=Hint):
     """Marks that a field is internal to the class and so should not in a repr."""
 
 
-class Hashed(Hint):
+class Hashed(metaclass=Hint):
     """Marks that a field should be included in the generated __hash__."""
 
 
