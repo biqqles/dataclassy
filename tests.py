@@ -98,6 +98,11 @@ class Tests(unittest.TestCase):
         self.assertFalse(Internal.is_hinted(int))
         self.assertFalse(Internal.is_hinted(Union[int, str]))
 
+        # test __args__ being present but None
+        issue39 = Union[int, str]
+        issue39.__args__ = None
+        self.assertFalse(Internal.is_hinted(issue39))
+
     def test_init(self):
         """Test correct generation of a __new__ method."""
         self.assertEqual(
