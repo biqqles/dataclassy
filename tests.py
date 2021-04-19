@@ -6,20 +6,23 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple, Optional, Union
-
-try:
-    from typing import ForwardRef
-except ImportError:  # Python 3.6
-    from typing import _ForwardRef as ForwardRef
-
 import unittest
-from collections import namedtuple
+from typing import Any, Dict, List, Tuple, Optional, Type, Union
+from collections import OrderedDict, namedtuple
 from inspect import signature
 from sys import getsizeof
 
 from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal, Hashed
 from dataclassy.dataclass import DataClassMeta
+
+
+def parameters(obj) -> Dict[str, Union[Type, Tuple[Type, Any]]]:
+    """Get the parameters for a callable. Returns an OrderedDict so that order is taken into account when comparing.
+    TODO: update for Python 3.10 where all annotations are strings. Decide whether it's best to explicitly convert
+    and compare annotations to strings or use typing.get_type_hints."""
+    raw_parameters = signature(obj).parameters.values()
+    return OrderedDict({p.name: p.annotation if p.default == p.empty else (p.annotation, p.default)
+                        for p in raw_parameters})
 
 
 class Tests(unittest.TestCase):
@@ -87,7 +90,8 @@ class Tests(unittest.TestCase):
             foods: List[str] = []
             SOME_CONSTANT = 232
 
-        self.assertEqual(str(signature(Pet)), '(name: str, age: int, species: str, foods: List[str] = [])')
+        self.assertEqual(parameters(Pet),
+                         {'name': str, 'age': int, 'species': str, 'foods': (List[str], [])})
 
     def test_internal(self):
         """Test the internal type hint."""
@@ -106,8 +110,8 @@ class Tests(unittest.TestCase):
     def test_init(self):
         """Test correct generation of a __new__ method."""
         self.assertEqual(
-            str(signature(self.Beta)),
-            "(a: int, c: int, f: int, b: int = 2, d: int = 4, e: Union[dataclassy.dataclass.Internal, Dict] = {})")
+            parameters(self.Beta),
+            {'a': int, 'c': int, 'f': int, 'b': (int, 2), 'd': (int, 4), 'e': (Union[Internal, Dict], {})})
 
         @dataclass(init=False)
         class NoInit:
@@ -219,7 +223,7 @@ class Tests(unittest.TestCase):
         class ClassVarOnly:
             class_var = 0
 
-        self.assertEqual(str(signature(ClassVarOnly)), "()")
+        self.assertEqual(parameters(ClassVarOnly), {})
 
     def test_mutable_defaults(self):
         """Test mutable defaults are copied and not mutated between instances."""
@@ -312,8 +316,9 @@ class Tests(unittest.TestCase):
         class Multiple(self.Alpha, self.Epsilon):
             z: bool
 
-        self.assertEqual(str(signature(Multiple)), "(a: int, c: int, g: Tuple[tests.NT], "
-                                                   "h: List[ForwardRef('Epsilon')], z: bool, b: int = 2, _i: int = 0)")
+        self.assertEqual(parameters(Multiple),
+                         {'a': int, 'c': int, 'g': Tuple[self.NT], 'h': List['Epsilon'], 'z': bool, 'b': (int, 2),
+                          '_i': (int, 0)})
 
         # verify initialiser is functional
         multiple = Multiple(1, 2, tuple(), [], True)
@@ -360,8 +365,8 @@ class Tests(unittest.TestCase):
 
     def test_fields(self):
         """Test fields()."""
-        self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')]))
-        self.assertEqual(fields(self.e, True), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')], _i=int))
+        self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List['Epsilon']))
+        self.assertEqual(fields(self.e, True), dict(g=Tuple[self.NT], h=List['Epsilon'], _i=int))
 
     def test_values(self):
         """Test values()."""
