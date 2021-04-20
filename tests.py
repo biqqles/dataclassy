@@ -21,7 +21,7 @@ def parameters(obj) -> Dict[str, Union[Type, Tuple[Type, Any]]]:
     TODO: update for Python 3.10 where all annotations are strings. Decide whether it's best to explicitly convert
     and compare annotations to strings or use typing.get_type_hints."""
     raw_parameters = signature(obj).parameters.values()
-    return OrderedDict({p.name: p.annotation if p.default == p.empty else (p.annotation, p.default)
+    return OrderedDict({p.name: p.annotation if p.default is p.empty else (p.annotation, p.default)
                         for p in raw_parameters})
 
 
@@ -91,7 +91,7 @@ class Tests(unittest.TestCase):
             SOME_CONSTANT = 232
 
         self.assertEqual(parameters(Pet),
-                         {'name': str, 'age': int, 'species': str, 'foods': (List[str], [])})
+                         OrderedDict({'name': str, 'age': int, 'species': str, 'foods': (List[str], [])}))
 
     def test_internal(self):
         """Test the internal type hint."""
@@ -111,7 +111,7 @@ class Tests(unittest.TestCase):
         """Test correct generation of a __new__ method."""
         self.assertEqual(
             parameters(self.Beta),
-            {'a': int, 'c': int, 'f': int, 'b': (int, 2), 'd': (int, 4), 'e': (Union[Internal, Dict], {})})
+            OrderedDict({'a': int, 'c': int, 'f': int, 'b': (int, 2), 'd': (int, 4), 'e': (Union[Internal, Dict], {})}))
 
         @dataclass(init=False)
         class NoInit:
@@ -317,8 +317,8 @@ class Tests(unittest.TestCase):
             z: bool
 
         self.assertEqual(parameters(Multiple),
-                         {'a': int, 'c': int, 'g': Tuple[self.NT], 'h': List['Epsilon'], 'z': bool, 'b': (int, 2),
-                          '_i': (int, 0)})
+                         OrderedDict({'a': int, 'c': int, 'g': Tuple[self.NT], 'h': List['Epsilon'], 'z': bool,
+                                      'b': (int, 2), '_i': (int, 0)}))
 
         # verify initialiser is functional
         multiple = Multiple(1, 2, tuple(), [], True)
