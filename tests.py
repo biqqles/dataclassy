@@ -12,7 +12,7 @@ from collections import OrderedDict, namedtuple
 from inspect import signature
 from sys import getsizeof
 
-from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal, Hashed
+from dataclassy import *
 from dataclassy.dataclass import DataClassMeta
 
 
@@ -501,6 +501,26 @@ class Tests(unittest.TestCase):
         self.assertEqual(child.c, 3)
         self.assertEqual(child.d, 4)
         self.assertEqual(child.e, 5)
+
+    def test_factory(self):
+        """Test Factory."""
+        class CustomClassDefault:
+            def __init__(self):
+                self.three = 3
+
+        @dataclass
+        class WithFactories:
+            a: Dict = Factory(dict)
+            b: int = Factory(lambda: 1)
+            c: CustomClassDefault = Factory(CustomClassDefault)
+
+        with_factories = WithFactories()
+        self.assertEqual(with_factories.a, {})
+        self.assertEqual(with_factories.b, 1)
+        self.assertEqual(with_factories.c.three, 3)
+
+        with_factories_2 = WithFactories()
+        self.assertIsNot(with_factories.a, with_factories_2.a)
 
 
 if __name__ == '__main__':
