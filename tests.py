@@ -18,8 +18,7 @@ from dataclassy.dataclass import DataClassMeta
 
 def parameters(obj) -> Dict[str, Union[Type, Tuple[Type, Any]]]:
     """Get the parameters for a callable. Returns an OrderedDict so that order is taken into account when comparing.
-    TODO: update for Python 3.10 where all annotations are strings. Decide whether it's best to explicitly convert
-    and compare annotations to strings or use typing.get_type_hints."""
+    TODO: update for Python >3.10 where all annotations are strings."""
     raw_parameters = signature(obj).parameters.values()
     return OrderedDict({p.name: p.annotation if p.default is p.empty else (p.annotation, p.default)
                         for p in raw_parameters})
