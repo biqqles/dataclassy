@@ -392,7 +392,6 @@ class Tests(unittest.TestCase):
 
     def test_meta_subclass(self):
         """Test subclassing of DataClassMeta."""
-
         class DataClassMetaSubclass(DataClassMeta):
             def __new__(mcs, name, bases, dict_):
                 dict_["get_a"] = lambda self: self.a
@@ -471,6 +470,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(hash(Parent(1)) * 2, hash(Grandchild(1)))
 
     def test_multiple_inheritance_post_init(self):
+        """Test post-init execution under multiple-inheritance."""
         @dataclass
         class Grandparent:
             a: int
