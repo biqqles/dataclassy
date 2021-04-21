@@ -71,7 +71,7 @@ dataclassy has several important differences from dataclasses, mainly reflective
 
 |                                 |dataclasses                                 |dataclassy                              |
 |---------------------------------|:-------------------------------------------|:---------------------------------------|
-|*post-initialisation processing* |`__post_init__` method                      |`__init__` method                       |
+|*post-initialisation processing* |`__post_init__` method                      |`__init__` or `__post_init__` method    |
 |*init-only variables*            |fields with type `InitVar`                  |arguments to `__init__`                 |
 |*class variables*                |fields with type `ClassVar`                 |fields without type annotation          |
 |*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
