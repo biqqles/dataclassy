@@ -503,16 +503,16 @@ class Tests(unittest.TestCase):
         self.assertEqual(child.e, 5)
 
     def test_factory(self):
-        """Test Factory."""
+        """Test factory()."""
         class CustomClassDefault:
             def __init__(self):
                 self.three = 3
 
         @dataclass
         class WithFactories:
-            a: Dict = Factory(dict)
-            b: int = Factory(lambda: 1)
-            c: CustomClassDefault = Factory(CustomClassDefault)
+            a: Dict = factory(dict)
+            b: int = factory(lambda: 1)
+            c: CustomClassDefault = factory(CustomClassDefault)
 
         with_factories = WithFactories()
         self.assertEqual(with_factories.a, {})

@@ -8,7 +8,7 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType as Function
-from typing import Any, Callable, Dict, List, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Type, TypeVar, Union, cast
 
 DataClass = Any  # type hint for variables that should be data class instances
 
@@ -41,14 +41,22 @@ class Hashed(metaclass=Hint):
 class Factory:
     """This class takes a zero-argument callable. When a Factory instance is set as the default value of a field, this
     callable is executed and the instance variable set to the result."""
-    def __init__(self, constructor: Callable[[], Any]):
-        self.constructor = constructor
+    Produces = TypeVar('Produces')
 
-    def copy(self) -> Any:
+    def __init__(self, producer: Callable[[], Produces]):
+        self.producer = producer
+
+    def copy(self) -> Produces:
         """The generated __init__ checks for the existence of a `copy` method to determine whether a default value
         should be copied upon class instantiation. This is because the built-in mutable collections have a method like
         this. This class (ab)uses this behaviour to elegantly implement the factory."""
-        return self.constructor()
+        return self.producer()
+
+
+def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
+    """Takes a zero-argument callable and creates a Factory that executes this callable to generate a default value for
+    the field at class initialisation time. Casts the resulting Factory to keep mypy happy."""
+    return cast(Factory.Produces, Factory(producer))
 
 
 class DataClassMeta(type):
