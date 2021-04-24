@@ -10,6 +10,7 @@ import unittest
 from typing import Any, Dict, List, Tuple, Optional, Type, Union
 from collections import OrderedDict, namedtuple
 from inspect import signature
+from platform import python_implementation
 from sys import getsizeof
 
 from dataclassy import *
@@ -197,7 +198,9 @@ class Tests(unittest.TestCase):
         self.assertTrue(hasattr(self.b, '__slots__'))
         self.assertFalse(hasattr(self.b, '__dict__'))
         e = self.Epsilon(1, 2, 3)
-        self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
+
+        if python_implementation() != 'PyPy':  # sizes cannot be determined on PyPy
+            self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
 
     def test_frozen(self):
         """Test correct generation of __setattr__ and __delattr__ for a frozen class."""
