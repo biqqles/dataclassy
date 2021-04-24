@@ -28,6 +28,7 @@ In addition, dataclassy:
 - Is tiny (around 150 lines of code)
 - Has no dependencies
 - Supports Python 3.6 and up
+- [Supports mypy](#mypy-support)
 - Has 100% test coverage
 
 
@@ -75,8 +76,9 @@ dataclassy has several important differences from dataclasses, mainly reflective
 |*init-only variables*            |fields with type `InitVar`                  |arguments to `__init__`                 |
 |*class variables*                |fields with type `ClassVar`                 |fields without type annotation          |
 |*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
-|*field excluded from `repr`*     |`b: int = field(repr=False)`                |`Internal` type wrapper or `_name`      |
-|*"late init" field*              |`c: int = field(init=False`)                |`c: int = None`                         |
+|*dynamic defaults*               |`b: MyClass = field(default_factory=MyClass)`|`b: MyClass = factory(MyClass)`        |
+|*field excluded from `repr`*     |`c: int = field(repr=False)`                |`Internal` type wrapper or `_name`      |
+|*"late init" field*              |`d: int = field(init=False`)                |`d: int = None`                         |
 
 There are a couple of minor differences, too:
 
@@ -150,15 +152,18 @@ Like with any class, your `__init__` can also take parameters which exist only i
 #### Default values
 Default values for fields work exactly as default arguments to functions (and in fact this is how they are implemented), with one difference: for copyable defaults, a copy is automatically created for each class instance. This means that a new copy of the `list` field `foods` in `Pet` above will be created each time it is instantiated, so that appending to that attribute in one instance will not affect other instances. A "copyable default" is defined as any object implementing a `copy` method, which includes all the built-in mutable collections (including `defaultdict`).
 
-If you want to create new instances of objects which do not have a copy method, do so in `__init__`:
+If you want to create new instances of objects which do not have a `copy` method, use the [`factory`](#factorycreator) function. This function takes any zero-argument callable. When the class is instantiated, this callable is executed to produce a default value for the field:
 
 ```Python
+class MyClass:
+    pass
+
 @dataclass
-class CustomInit2:
-    m: MyClass = None
-    
-    def __init__(self):
-        self.m = MyClass()
+class CustomDefault:
+    m: MyClass = factory(MyClass)
+
+CustomDefault()  # CustomDefault(m=<__main__.MyClass object at 0x7f8b156feb50>)
+CustomDefault()  # CustomDefault(m=<__main__.MyClass object at 0x7f8b156fc7d0>)
 ```
 
 
@@ -220,6 +225,9 @@ Set this parameter to use a metaclass other than dataclassy's own. This metaclas
 
 
 ### Functions
+#### `factory(creator)`
+Takes a zero-argument callable and creates a _factory_ that executes this callable to generate a default value for the field at class initialisation time.
+
 #### `is_dataclass(obj)`
 Returns True if `obj` is a data class as implemented in this module.
 
