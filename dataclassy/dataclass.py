@@ -117,7 +117,7 @@ class DataClassMeta(type):
             del dict_['__slots__']
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
-            if post_init and '__init__' in dict_:
+            if post_init and is_user_func(dict_.get('__init__')):
                 dict_['__post_init__'] = dict_.pop('__init__')
             dict_['__init__'] = generate_init(all_annotations, all_defaults, post_init,
                                               options['kwargs'], options['frozen'])
