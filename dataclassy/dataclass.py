@@ -44,13 +44,10 @@ class Factory:
     Produces = TypeVar('Produces')
 
     def __init__(self, producer: Callable[[], Produces]):
-        self.producer = producer
-
-    def copy(self) -> Produces:
         """The generated __init__ checks for the existence of a `copy` method to determine whether a default value
         should be copied upon class instantiation. This is because the built-in mutable collections have a method like
         this. This class (ab)uses this behaviour to elegantly implement the factory."""
-        return self.producer()
+        self.copy = producer
 
 
 def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
