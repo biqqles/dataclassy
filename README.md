@@ -225,7 +225,7 @@ Set this parameter to use a metaclass other than dataclassy's own. This metaclas
 
 
 ### Functions
-#### `factory(creator)`
+#### `factory(producer)`
 Takes a zero-argument callable and creates a _factory_ that executes this callable to generate a default value for the field at class initialisation time.
 
 #### `is_dataclass(obj)`
