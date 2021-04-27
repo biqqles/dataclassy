@@ -7,8 +7,7 @@ Simply put, data classes are classes optimised for storing data. In this sense t
 ### Why use dataclassy?
 Data classes from **dataclassy** offer the following advantages over those from **dataclasses**:
 
-- Cleaner code: no messy `InitVar`, `ClassVar`, `field` or `__post_init__`
-- Beautiful post-init processing: just define an `__init__` as you would normally
+- Cleaner code: no messy `InitVar`, `ClassVar`, `field` or `Field`
 - Friendly inheritance:
     - No need to apply a decorator to each and every subclass - just once and all following classes will also be data classes
     - Complete freedom in field ordering - no headaches if a field with a default value follows a field without one
@@ -72,8 +71,7 @@ dataclassy has several important differences from dataclasses, mainly reflective
 
 |                                 |dataclasses                                 |dataclassy                              |
 |---------------------------------|:-------------------------------------------|:---------------------------------------|
-|*post-initialisation processing* |`__post_init__` method                      |`__init__` or `__post_init__` method    |
-|*init-only variables*            |fields with type `InitVar`                  |arguments to `__init__`                 |
+|*init-only variables*            |fields with type `InitVar`                  |arguments to `__post_init__`            |
 |*class variables*                |fields with type `ClassVar`                 |fields without type annotation          |
 |*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
 |*dynamic defaults*               |`b: MyClass = field(default_factory=MyClass)`|`b: MyClass = factory(MyClass)`        |
@@ -129,7 +127,7 @@ If an initialiser is requested (`init=True`), dataclassy automatically sets the 
 
 You can call the method that contains this logic one of two options:
 
-- `__init__` - this originated back when dataclassy used `__new__` for initialisation. It is recommended if you are comfortable with "magic" - see the note about dataclassy turning a class into a different _thing_. From this point of view, a data class (in contrast to a regular class) happens to perform special logic before `__init__` is called. You must call `super().__post_init__` instead of `super().__init__` to prevent ambiguity.
+- (DEPRECATED) `__init__` - this originated back when dataclassy used `__new__` for initialisation. It is recommended if you are comfortable with "magic" - see the note about dataclassy turning a class into a different _thing_. From this point of view, a data class (in contrast to a regular class) happens to perform special logic before `__init__` is called. You must call `super().__post_init__` instead of `super().__init__` to prevent ambiguity.
 - `__post_init__` - compatible with dataclasses. Will not be called if `init=False` (like dataclasses) or if the class has no fields.
 
 This logic can include, for example, calculating new fields based on the values of others. This is demonstrated in the following example:
@@ -140,13 +138,13 @@ class CustomInit:
     a: int
     b: int
     
-    def __init__(self):
+    def __post_init__(self):
         self.c = self.a / self.b
 ```
 
 In this example, when the class is instantiated with `CustomInit(1, 2)`, the field `c` is calculated as `0.5`.
 
-Like with any class, your `__init__` can also take parameters which exist only in the context of `__init__`. These can be used for arguments to the class that you do not want to store as fields. A parameter cannot have the name of a class field; this again is to prevent ambiguity.
+Like with any function, your `__post_init__` can also take parameters which exist only in the context of `__post_init__`. These can be used for arguments to the class that you do not want to store as fields. A parameter cannot have the name of a class field; this again is to prevent ambiguity.
 
 
 #### Default values

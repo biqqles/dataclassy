@@ -9,6 +9,7 @@
 """
 from types import FunctionType as Function
 from typing import Any, Callable, Dict, List, Type, TypeVar, Union, cast
+import warnings
 
 DataClass = Any  # type hint for variables that should be data class instances
 
@@ -115,6 +116,8 @@ class DataClassMeta(type):
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
             if post_init and is_user_func(dict_.get('__init__')):
+                warnings.warn('Defining post-initialisation logic in __init__ is deprecated and will be removed in a'
+                              ' forthcoming version. Please rename your method to __post_init__.', DeprecationWarning)
                 dict_['__post_init__'] = dict_.pop('__init__')
             dict_['__init__'] = generate_init(all_annotations, all_defaults, post_init,
                                               options['kwargs'], options['frozen'])
