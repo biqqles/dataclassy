@@ -132,7 +132,8 @@ class DataClassMeta(type):
             dict_.setdefault('__iter__', __iter__)
 
         if options['frozen']:
-            dict_['__delattr__'] = dict_['__setattr__'] = __setattr__
+            dict_.setdefault('__delattr__', __setattr__)
+            dict_.setdefault('__setattr__', __setattr__)
 
         if options['order']:
             dict_.setdefault('__lt__', __lt__)
