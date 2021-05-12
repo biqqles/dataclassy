@@ -56,6 +56,11 @@ def replace(dataclass: DataClass, **changes) -> DataClass:
     return type(dataclass)(**dict(values(dataclass, internals=True), **changes))
 
 
+def from_dict(root: DataClass, struct: Dict[str, Any]):
+    """Recursively instantiate a data class, which may contain other data classes as fields, from a dictionary."""
+    return root(**{f: from_dict(t, struct[f]) if is_dataclass(t) else struct[f] for f, t in fields(root).items()})
+
+
 def _filter_annotations(annotations: Dict[str, Type], internals: bool) -> Dict[str, Type]:
     """Filter an annotations dict for to remove or keep internal fields."""
     return annotations if internals else {f: a for f, a in annotations.items()

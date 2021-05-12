@@ -393,6 +393,24 @@ class Tests(unittest.TestCase):
         self.assertEqual(replace(self.b, f=4), self.Beta(1, 2, 4))
         self.assertEqual(self.b, self.Beta(1, 2, 3))  # assert that the original instance remains unchanged
 
+    def test_from_dict(self):
+        @dataclass
+        class Date:
+            y: int
+            m: int
+            d: int
+
+        @dataclass
+        class Person:
+            name: str
+            dob: Date
+
+        struct = dict(name='Bob', dob=dict(y=2, m=2, d=2))
+        self.assertEqual(from_dict(Person, struct), Person('Bob', Date(2, 2, 2)))
+
+        with self.assertRaises(KeyError):
+            from_dict(Person, dict(name='Bob'))
+
     def test_meta_subclass(self):
         """Test subclassing of DataClassMeta."""
         class DataClassMetaSubclass(DataClassMeta):
