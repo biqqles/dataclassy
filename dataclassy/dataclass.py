@@ -8,34 +8,52 @@
  work, as well as functions which operate on them.
 """
 from types import FunctionType as Function
-from typing import Any, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, List, Type, TypeVar, Union, cast
 
 DataClass = Any  # type hint for variables that should be data class instances
 
 
-class Hint:
-    """A type hint "wrapper". Wraps the actual type of a field to convey information about how it is intended
-    to be used, much like typing.ClassVar. Usage is like Hint[some_type]."""
+class Hint(type):
+    """Metaclass for a type hint "wrapper". Wraps the actual type of a field to convey information about how it is
+    intended to be used, much like typing.ClassVar. Usage is like Hint[some_type].
+    This is a metaclass because __class_getitem__ is not recognised in Python 3.6."""
     Wrapped = TypeVar('Wrapped')
 
-    def __class_getitem__(cls, item: Wrapped) -> Union['Hint', Wrapped]:
+    def __getitem__(cls, item: Wrapped) -> Union['Hint', Wrapped]:
         """Create a new Union of the wrapper and the wrapped type. Union is smart enough to flatten nested
         unions automatically."""
         return Union[cls, item]
 
-    @classmethod
     def is_hinted(cls, hint: Union[Type, str]) -> bool:
         """Check whether a type hint represents this Hint."""
-        return (hasattr(hint, '__args__') and cls in hint.__args__ or
+        return ((hasattr(hint, '__args__') and cls in (hint.__args__ or [])) or
                 (type(hint) is str and f'{cls.__name__}[' in hint))
 
 
-class Internal(Hint):
+class Internal(metaclass=Hint):
     """Marks that a field is internal to the class and so should not in a repr."""
 
 
-class Hashed(Hint):
+class Hashed(metaclass=Hint):
     """Marks that a field should be included in the generated __hash__."""
+
+
+class Factory:
+    """This class takes a zero-argument callable. When a Factory instance is set as the default value of a field, this
+    callable is executed and the instance variable set to the result."""
+    Produces = TypeVar('Produces')
+
+    def __init__(self, producer: Callable[[], Produces]):
+        """The generated __init__ checks for the existence of a `copy` method to determine whether a default value
+        should be copied upon class instantiation. This is because the built-in mutable collections have a method like
+        this. This class (ab)uses this behaviour to elegantly implement the factory."""
+        self.copy = producer
+
+
+def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
+    """Takes a zero-argument callable and creates a Factory that executes this callable to generate a default value for
+    the field at class initialisation time. Casts the resulting Factory to keep mypy happy."""
+    return cast(Factory.Produces, Factory(producer))
 
 
 class DataClassMeta(type):
@@ -51,13 +69,13 @@ class DataClassMeta(type):
         dict_.pop('__dict__', None)
         dict_ = {f: v for f, v in dict_.items() if type(v).__name__ != 'member_descriptor'}
 
-        # collect annotations, defaults, slots and options from this class' ancestors, in definition order
+        # collect functions, annotations, defaults, slots and options from this class' ancestors, in definition order
 
+        all_funcs = {}
         all_annotations = {}
         all_defaults = {}
         all_slots = set()
         options = dict(mcs.DEFAULT_OPTIONS)
-        post_init = False
 
         dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
         for b in dataclass_bases + [dict_]:
@@ -66,11 +84,12 @@ class DataClassMeta(type):
             all_slots.update(b.get('__slots__', set()))
             options.update(b.get('__dataclass__', {}))
 
-            # add user-defined methods to dict_ so that we know not to replace them. Do not replace methods
-            # that are already there as this would break overriding
-            dict_.update({f: v for f, v in b.items() if f not in dict_ and is_user_func(v)})
+            # collect all user-defined functions
+            # TODO: this actually can just update with b, but this might result in a slight change in behaviour.
+            # Think about this simplification (and simplifying post_init) later.
+            all_funcs.update({f: v for f, v in b.items() if is_user_func(v)})
 
-            post_init = is_user_func(b.get('__init__')) or is_user_func(b.get('__post_init__'))
+        post_init = '__post_init__' in all_funcs or any(hasattr(b, '__post_init__') for b in bases)
 
         # update options and defaults for *this* class
 
@@ -96,28 +115,30 @@ class DataClassMeta(type):
             del dict_['__slots__']
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
-            if post_init and '__init__' in dict_:
-                dict_['__post_init__'] = dict_.pop('__init__')
             dict_['__init__'] = generate_init(all_annotations, all_defaults, post_init,
                                               options['kwargs'], options['frozen'])
+        elif options['init'] and not is_user_func(dict_.get('__init__')) and is_user_func(dict_.get('__post_init__')):
+            # alias __post_init__ to __post_init__ so it is always called (unless init=False)
+            dict_['__init__'] = dict_['__post_init__']
 
         if options['repr']:
-            dict_.setdefault('__repr__', __repr__)
+            '__repr__' in all_funcs or dict_.setdefault('__repr__', __repr__)
 
         if options['eq']:
-            dict_.setdefault('__eq__', __eq__)
+            '__eq__' in all_funcs or dict_.setdefault('__eq__', __eq__)
 
         if options['iter']:
-            dict_.setdefault('__iter__', __iter__)
+            '__iter__' in all_funcs or dict_.setdefault('__iter__', __iter__)
 
         if options['frozen']:
-            dict_['__delattr__'] = dict_['__setattr__'] = __setattr__
+            '__delattr__' in all_funcs or dict_.setdefault('__delattr__', __setattr__)
+            '__setattr__' in all_funcs or dict_.setdefault('__setattr__', __setattr__)
 
         if options['order']:
-            dict_.setdefault('__lt__', __lt__)
+            '__lt__' in all_funcs or dict_.setdefault('__lt__', __lt__)
 
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
-            dict_.setdefault('__hash__', generate_hash(all_annotations))
+            '__hash__' in all_funcs or dict_.setdefault('__hash__', generate_hash(all_annotations))
 
         return super().__new__(mcs, name, bases, dict_)
 

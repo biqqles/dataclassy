@@ -7,8 +7,8 @@ Simply put, data classes are classes optimised for storing data. In this sense t
 ### Why use dataclassy?
 Data classes from **dataclassy** offer the following advantages over those from **dataclasses**:
 
-- Cleaner code: no messy `InitVar`, `ClassVar`, `field` or `__post_init__`
-- Beautiful post-init processing: just define an `__init__` as you would normally
+- Cleaner code: no messy `InitVar`, `ClassVar`, `field` or `Field`
+- Beautiful init-only parameters: just add parameters to `__post_init__`
 - Friendly inheritance:
     - No need to apply a decorator to each and every subclass - just once and all following classes will also be data classes
     - Complete freedom in field ordering - no headaches if a field with a default value follows a field without one
@@ -28,6 +28,7 @@ In addition, dataclassy:
 - Is tiny (around 150 lines of code)
 - Has no dependencies
 - Supports Python 3.6 and up
+- [Supports mypy](#mypy-support)
 - Has 100% test coverage
 
 
@@ -71,12 +72,12 @@ dataclassy has several important differences from dataclasses, mainly reflective
 
 |                                 |dataclasses                                 |dataclassy                              |
 |---------------------------------|:-------------------------------------------|:---------------------------------------|
-|*post-initialisation processing* |`__post_init__` method                      |`__init__` method                       |
-|*init-only variables*            |fields with type `InitVar`                  |arguments to `__init__`                 |
+|*init-only variables*            |fields with type `InitVar`                  |arguments to `__post_init__`            |
 |*class variables*                |fields with type `ClassVar`                 |fields without type annotation          |
 |*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
-|*field excluded from `repr`*     |`b: int = field(repr=False)`                |`Internal` type wrapper or `_name`      |
-|*"late init" field*              |`c: int = field(init=False`)                |`c: int = None`                         |
+|*dynamic defaults*               |`b: MyClass = field(default_factory=MyClass)`|`b: MyClass = factory(MyClass)`        |
+|*field excluded from `repr`*     |`c: int = field(repr=False)`                |`Internal` type wrapper or `_name`      |
+|*"late init" field*              |`d: int = field(init=False`)                |`d: int = None`                         |
 
 There are a couple of minor differences, too:
 
@@ -125,12 +126,7 @@ To change the type, or to add or change the default value of a field in a subcla
 #### Post-initialisation processing
 If an initialiser is requested (`init=True`), dataclassy automatically sets the attributes of the class upon initialisation. You can define code that should run after this happens - this is called _post-init processing_.  
 
-You can call the method that contains this logic one of two options:
-
-- `__init__` - this originated back when dataclassy used `__new__` for initialisation. It is recommended if you are comfortable with "magic" - see the note about dataclassy turning a class into a different _thing_. From this point of view, a data class (in contrast to a regular class) happens to perform special logic before `__init__` is called. You must call `super().__post_init__` instead of `super().__init__` to prevent ambiguity.
-- `__post_init__` - compatible with dataclasses. Will not be called if `init=False` (like dataclasses) or if the class has no fields.
-
-This logic can include, for example, calculating new fields based on the values of others. This is demonstrated in the following example:
+The method that contains this logic should be called `__post_init__`. Unlike with dataclasses, unless `init=False`, dataclassy will ensure this method is always run, even if the class has no fields.
 
 ```Python
 @dataclass
@@ -138,27 +134,30 @@ class CustomInit:
     a: int
     b: int
     
-    def __init__(self):
+    def __post_init__(self):
         self.c = self.a / self.b
 ```
 
 In this example, when the class is instantiated with `CustomInit(1, 2)`, the field `c` is calculated as `0.5`.
 
-Like with any class, your `__init__` can also take parameters which exist only in the context of `__init__`. These can be used for arguments to the class that you do not want to store as fields. A parameter cannot have the name of a class field; this again is to prevent ambiguity.
+Like with any function, your `__post_init__` can also take parameters which exist only in the context of `__post_init__`. These can be used for arguments to the class that you do not want to store as fields. A parameter cannot have the name of a class field; this is to prevent ambiguity.
 
 
 #### Default values
 Default values for fields work exactly as default arguments to functions (and in fact this is how they are implemented), with one difference: for copyable defaults, a copy is automatically created for each class instance. This means that a new copy of the `list` field `foods` in `Pet` above will be created each time it is instantiated, so that appending to that attribute in one instance will not affect other instances. A "copyable default" is defined as any object implementing a `copy` method, which includes all the built-in mutable collections (including `defaultdict`).
 
-If you want to create new instances of objects which do not have a copy method, do so in `__init__`:
+If you want to create new instances of objects which do not have a `copy` method, use the [`factory`](#factorycreator) function. This function takes any zero-argument callable. When the class is instantiated, this callable is executed to produce a default value for the field:
 
 ```Python
+class MyClass:
+    pass
+
 @dataclass
-class CustomInit2:
-    m: MyClass = None
-    
-    def __init__(self):
-        self.m = MyClass()
+class CustomDefault:
+    m: MyClass = factory(MyClass)
+
+CustomDefault()  # CustomDefault(m=<__main__.MyClass object at 0x7f8b156feb50>)
+CustomDefault()  # CustomDefault(m=<__main__.MyClass object at 0x7f8b156fc7d0>)
 ```
 
 
@@ -178,7 +177,7 @@ This decorator takes advantage of two equally important features added in Python
 > The term "field", as used in this section, refers to a class-level variable with a type annotation. For more information, see the documentation for [`fields()`](#fieldsdataclass-internalsfalse) below.
 
 ##### `init`
-If true (the default), generate an [`__init__`](https://docs.python.org/3/reference/datamodel.html#object.__init__) method that has as parameters all fields up its inheritance chain. These are ordered in definition order, with all fields with default values placed towards the end, following all fields without them. The method initialises the class by applying these parameters to the class as attributes.
+If true (the default), generate an [`__init__`](https://docs.python.org/3/reference/datamodel.html#object.__init__) method that has as parameters all fields up its inheritance chain. These are ordered in definition order, with all fields with default values placed towards the end, following all fields without them. The method initialises the class by applying these parameters to the class as attributes. If defined, it will also call `__post_init__` with any remaining arguments.
 
 This ordering is an important distinction from dataclasses, where all fields are simply ordered in definition order, and is what allows dataclassy's data classes to be far more flexible in terms of inheritance. 
 
@@ -220,6 +219,9 @@ Set this parameter to use a metaclass other than dataclassy's own. This metaclas
 
 
 ### Functions
+#### `factory(producer)`
+Takes a zero-argument callable and creates a _factory_ that executes this callable to generate a default value for the field at class initialisation time.
+
 #### `is_dataclass(obj)`
 Returns True if `obj` is a data class as implemented in this module.
 

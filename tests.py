@@ -6,14 +6,23 @@
 
  This file contains tests for dataclassy.
 """
-from typing import Dict, List, Tuple, Optional, ForwardRef, Union
 import unittest
-from collections import namedtuple
+from typing import Any, Dict, List, Tuple, Optional, Type, Union
+from collections import OrderedDict, namedtuple
 from inspect import signature
+from platform import python_implementation
 from sys import getsizeof
 
-from dataclassy import dataclass, as_dict, as_tuple, make_dataclass, fields, replace, values, Internal, Hashed
+from dataclassy import *
 from dataclassy.dataclass import DataClassMeta
+
+
+def parameters(obj) -> Dict[str, Union[Type, Tuple[Type, Any]]]:
+    """Get the parameters for a callable. Returns an OrderedDict so that order is taken into account when comparing.
+    TODO: update for Python >3.10 where all annotations are strings."""
+    raw_parameters = signature(obj).parameters.values()
+    return OrderedDict({p.name: p.annotation if p.default is p.empty else (p.annotation, p.default)
+                        for p in raw_parameters})
 
 
 class Tests(unittest.TestCase):
@@ -81,7 +90,8 @@ class Tests(unittest.TestCase):
             foods: List[str] = []
             SOME_CONSTANT = 232
 
-        self.assertEqual(str(signature(Pet)), '(name: str, age: int, species: str, foods: List[str] = [])')
+        self.assertEqual(parameters(Pet),
+                         OrderedDict({'name': str, 'age': int, 'species': str, 'foods': (List[str], [])}))
 
     def test_internal(self):
         """Test the internal type hint."""
@@ -92,15 +102,20 @@ class Tests(unittest.TestCase):
         self.assertFalse(Internal.is_hinted(int))
         self.assertFalse(Internal.is_hinted(Union[int, str]))
 
+        # test __args__ being present but None
+        issue39 = Union[int, str]
+        issue39.__args__ = None
+        self.assertFalse(Internal.is_hinted(issue39))
+
     def test_init(self):
         """Test correct generation of a __new__ method."""
         self.assertEqual(
-            str(signature(self.Beta)),
-            "(a: int, c: int, f: int, b: int = 2, d: int = 4, e: Union[dataclassy.dataclass.Internal, Dict] = {})")
+            parameters(self.Beta),
+            OrderedDict({'a': int, 'c': int, 'f': int, 'b': (int, 2), 'd': (int, 4), 'e': (Union[Internal, Dict], {})}))
 
         @dataclass(init=False)
         class NoInit:
-            def __init__(self):
+            def __post_init__(self):
                 pass
 
     def test_repr(self):
@@ -183,7 +198,9 @@ class Tests(unittest.TestCase):
         self.assertTrue(hasattr(self.b, '__slots__'))
         self.assertFalse(hasattr(self.b, '__dict__'))
         e = self.Epsilon(1, 2, 3)
-        self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
+
+        if python_implementation() != 'PyPy':  # sizes cannot be determined on PyPy
+            self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
 
     def test_frozen(self):
         """Test correct generation of __setattr__ and __delattr__ for a frozen class."""
@@ -208,7 +225,7 @@ class Tests(unittest.TestCase):
         class ClassVarOnly:
             class_var = 0
 
-        self.assertEqual(str(signature(ClassVarOnly)), "()")
+        self.assertEqual(parameters(ClassVarOnly), {})
 
     def test_mutable_defaults(self):
         """Test mutable defaults are copied and not mutated between instances."""
@@ -226,17 +243,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(c.mutable, 4)
 
     def test_custom_init(self):
-        """Test user-defined __init__ used for post-initialisation logic."""
-        @dataclass
-        class CustomInit:
-            a: int
-            b: int
-
-            def __init__(self, c):
-                self.d = (self.a + self.b) / c
-
-        # ^ exactly equivalent v
-
+        """Test user-defined __post_init__ used for post-initialisation logic."""
         @dataclass
         class CustomPostInit:
             a: int
@@ -244,9 +251,6 @@ class Tests(unittest.TestCase):
 
             def __post_init__(self, c):
                 self.d = (self.a + self.b) / c
-
-        custom = CustomInit(1, 2, 3)
-        self.assertEqual(custom.d, 1.0)
 
         custom_post = CustomPostInit(1, 2, 3)
         self.assertEqual(custom_post.d, 1.0)
@@ -256,7 +260,7 @@ class Tests(unittest.TestCase):
             a: int
             b: int
 
-            def __init__(self, *args, **kwargs):
+            def __post_init__(self, *args, **kwargs):
                 self.c = kwargs
 
         custom_kwargs = CustomInitKwargs(1, 2, c=3)
@@ -266,7 +270,7 @@ class Tests(unittest.TestCase):
         class Issue6:
             path: int = 1
 
-            def __init__(self):
+            def __post_init__(self):
                 pass
 
         Issue6(3)  # previously broken (see issue #6)
@@ -277,7 +281,7 @@ class Tests(unittest.TestCase):
 
         @dataclass
         class Empty:
-            def __init__(self, a):
+            def __post_init__(self, a):
                 pass
 
         Empty(0)
@@ -291,18 +295,19 @@ class Tests(unittest.TestCase):
         class HasInit(TotallyEmpty):
             _test: int = None
 
-            def __init__(self, test: int):
+            def __post_init__(self, test: int):
                 self._test = test
 
         HasInit(test=3)
 
     def test_multiple_inheritance(self):
-        """Test that multiple inheritance produces an __init__ with the expected parameters."""
+        """Test that multiple inheritance produces an __post_init__ with the expected parameters."""
         class Multiple(self.Alpha, self.Epsilon):
             z: bool
 
-        self.assertEqual(str(signature(Multiple)), "(a: int, c: int, g: Tuple[tests.NT], "
-                                                   "h: List[ForwardRef('Epsilon')], z: bool, b: int = 2, _i: int = 0)")
+        self.assertEqual(parameters(Multiple),
+                         OrderedDict({'a': int, 'c': int, 'g': Tuple[self.NT], 'h': List['Epsilon'], 'z': bool,
+                                      'b': (int, 2), '_i': (int, 0)}))
 
         # verify initialiser is functional
         multiple = Multiple(1, 2, tuple(), [], True)
@@ -319,7 +324,7 @@ class Tests(unittest.TestCase):
             b: int
 
         class InitInSubClass(NoInit):
-            def __init__(self, c):
+            def __post_init__(self, c):
                 self.c = c
 
         self.assertTrue(hasattr(InitInSubClass, "__post_init__"))
@@ -333,7 +338,7 @@ class Tests(unittest.TestCase):
         class HasInit:
             a: int
 
-            def __init__(self, d):
+            def __post_init__(self, d):
                 self.d = d
 
         class NoInitInSubClass(HasInit):
@@ -349,8 +354,8 @@ class Tests(unittest.TestCase):
 
     def test_fields(self):
         """Test fields()."""
-        self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')]))
-        self.assertEqual(fields(self.e, True), dict(g=Tuple[self.NT], h=List[ForwardRef('Epsilon')], _i=int))
+        self.assertEqual(fields(self.e), dict(g=Tuple[self.NT], h=List['Epsilon']))
+        self.assertEqual(fields(self.e, True), dict(g=Tuple[self.NT], h=List['Epsilon'], _i=int))
 
     def test_values(self):
         """Test values()."""
@@ -377,7 +382,6 @@ class Tests(unittest.TestCase):
 
     def test_meta_subclass(self):
         """Test subclassing of DataClassMeta."""
-
         class DataClassMetaSubclass(DataClassMeta):
             def __new__(mcs, name, bases, dict_):
                 dict_["get_a"] = lambda self: self.a
@@ -456,6 +460,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(hash(Parent(1)) * 2, hash(Grandchild(1)))
 
     def test_multiple_inheritance_post_init(self):
+        """Test post-init execution under multiple-inheritance."""
         @dataclass
         class Grandparent:
             a: int
@@ -505,6 +510,27 @@ class Tests(unittest.TestCase):
             pass
 
         self.assertIs(D.f, B.f)
+
+        
+    def test_factory(self):
+        """Test factory()."""
+        class CustomClassDefault:
+            def __init__(self):
+                self.three = 3
+
+        @dataclass
+        class WithFactories:
+            a: Dict = factory(dict)
+            b: int = factory(lambda: 1)
+            c: CustomClassDefault = factory(CustomClassDefault)
+
+        with_factories = WithFactories()
+        self.assertEqual(with_factories.a, {})
+        self.assertEqual(with_factories.b, 1)
+        self.assertEqual(with_factories.c.three, 3)
+
+        with_factories_2 = WithFactories()
+        self.assertIsNot(with_factories.a, with_factories_2.a)
 
 
 if __name__ == '__main__':
