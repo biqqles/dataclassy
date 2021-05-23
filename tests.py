@@ -488,17 +488,24 @@ class Tests(unittest.TestCase):
         self.assertEqual(child.e, 5)
 
     def test_multiple_inheritance_members(self):
+        """Test multiple-inheritance for member functions."""
         @dataclass
         class A:
-            def f(self): return 1
+            def f(self):
+                return 1
+
         class B(A):
-            def f(self): return 2
+            def f(self):
+                return 2
+
         class C(A):
             pass
+
         class D(C, B):
             pass
 
         self.assertIs(D.f, B.f)
+
 
 if __name__ == '__main__':
     unittest.main()
