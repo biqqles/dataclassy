@@ -9,7 +9,6 @@
 """
 from types import FunctionType as Function
 from typing import Any, Callable, Dict, List, Type, TypeVar, Union, cast
-import warnings
 
 DataClass = Any  # type hint for variables that should be data class instances
 
@@ -89,7 +88,7 @@ class DataClassMeta(type):
             # that are already there as this would break overriding
             dict_.update({f: v for f, v in b.items() if f not in dict_ and is_user_func(v)})
 
-            post_init = is_user_func(b.get('__init__')) or is_user_func(b.get('__post_init__'))
+            post_init = is_user_func(b.get('__post_init__'))
 
         # update options and defaults for *this* class
 
@@ -115,12 +114,11 @@ class DataClassMeta(type):
             del dict_['__slots__']
 
         if options['init'] and all_annotations:  # only generate __init__ if there are fields to set
-            if post_init and is_user_func(dict_.get('__init__')):
-                warnings.warn('Defining post-initialisation logic in __init__ is deprecated and will be removed in a'
-                              ' forthcoming version. Please rename your method to __post_init__.', DeprecationWarning)
-                dict_['__post_init__'] = dict_.pop('__init__')
             dict_['__init__'] = generate_init(all_annotations, all_defaults, post_init,
                                               options['kwargs'], options['frozen'])
+        elif options['init'] and not is_user_func(dict_.get('__init__')) and is_user_func(dict_.get('__post_init__')):
+            # alias __post_init__ to __post_init__ so it is always called (unless init=False)
+            dict_['__init__'] = dict_['__post_init__']
 
         if options['repr']:
             dict_.setdefault('__repr__', __repr__)

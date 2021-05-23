@@ -115,7 +115,7 @@ class Tests(unittest.TestCase):
 
         @dataclass(init=False)
         class NoInit:
-            def __init__(self):
+            def __post_init__(self):
                 pass
 
     def test_repr(self):
@@ -243,17 +243,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(c.mutable, 4)
 
     def test_custom_init(self):
-        """Test user-defined __init__ used for post-initialisation logic."""
-        @dataclass
-        class CustomInit:
-            a: int
-            b: int
-
-            def __init__(self, c):
-                self.d = (self.a + self.b) / c
-
-        # ^ exactly equivalent v
-
+        """Test user-defined __post_init__ used for post-initialisation logic."""
         @dataclass
         class CustomPostInit:
             a: int
@@ -261,9 +251,6 @@ class Tests(unittest.TestCase):
 
             def __post_init__(self, c):
                 self.d = (self.a + self.b) / c
-
-        custom = CustomInit(1, 2, 3)
-        self.assertEqual(custom.d, 1.0)
 
         custom_post = CustomPostInit(1, 2, 3)
         self.assertEqual(custom_post.d, 1.0)
@@ -273,7 +260,7 @@ class Tests(unittest.TestCase):
             a: int
             b: int
 
-            def __init__(self, *args, **kwargs):
+            def __post_init__(self, *args, **kwargs):
                 self.c = kwargs
 
         custom_kwargs = CustomInitKwargs(1, 2, c=3)
@@ -283,7 +270,7 @@ class Tests(unittest.TestCase):
         class Issue6:
             path: int = 1
 
-            def __init__(self):
+            def __post_init__(self):
                 pass
 
         Issue6(3)  # previously broken (see issue #6)
@@ -294,7 +281,7 @@ class Tests(unittest.TestCase):
 
         @dataclass
         class Empty:
-            def __init__(self, a):
+            def __post_init__(self, a):
                 pass
 
         Empty(0)
@@ -308,13 +295,13 @@ class Tests(unittest.TestCase):
         class HasInit(TotallyEmpty):
             _test: int = None
 
-            def __init__(self, test: int):
+            def __post_init__(self, test: int):
                 self._test = test
 
         HasInit(test=3)
 
     def test_multiple_inheritance(self):
-        """Test that multiple inheritance produces an __init__ with the expected parameters."""
+        """Test that multiple inheritance produces an __post_init__ with the expected parameters."""
         class Multiple(self.Alpha, self.Epsilon):
             z: bool
 
@@ -337,7 +324,7 @@ class Tests(unittest.TestCase):
             b: int
 
         class InitInSubClass(NoInit):
-            def __init__(self, c):
+            def __post_init__(self, c):
                 self.c = c
 
         self.assertTrue(hasattr(InitInSubClass, "__post_init__"))
@@ -351,7 +338,7 @@ class Tests(unittest.TestCase):
         class HasInit:
             a: int
 
-            def __init__(self, d):
+            def __post_init__(self, d):
                 self.d = d
 
         class NoInitInSubClass(HasInit):

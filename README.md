@@ -8,6 +8,7 @@ Simply put, data classes are classes optimised for storing data. In this sense t
 Data classes from **dataclassy** offer the following advantages over those from **dataclasses**:
 
 - Cleaner code: no messy `InitVar`, `ClassVar`, `field` or `Field`
+- Beautiful init-only parameters: just add parameters to `__post_init__`
 - Friendly inheritance:
     - No need to apply a decorator to each and every subclass - just once and all following classes will also be data classes
     - Complete freedom in field ordering - no headaches if a field with a default value follows a field without one
@@ -125,12 +126,7 @@ To change the type, or to add or change the default value of a field in a subcla
 #### Post-initialisation processing
 If an initialiser is requested (`init=True`), dataclassy automatically sets the attributes of the class upon initialisation. You can define code that should run after this happens - this is called _post-init processing_.  
 
-You can call the method that contains this logic one of two options:
-
-- (DEPRECATED) `__init__` - this originated back when dataclassy used `__new__` for initialisation. It is recommended if you are comfortable with "magic" - see the note about dataclassy turning a class into a different _thing_. From this point of view, a data class (in contrast to a regular class) happens to perform special logic before `__init__` is called. You must call `super().__post_init__` instead of `super().__init__` to prevent ambiguity.
-- `__post_init__` - compatible with dataclasses. Will not be called if `init=False` (like dataclasses) or if the class has no fields.
-
-This logic can include, for example, calculating new fields based on the values of others. This is demonstrated in the following example:
+The method that contains this logic should be called `__post_init__`. Unlike with dataclasses, unless `init=False`, dataclassy will ensure this method is always run, even if the class has no fields.
 
 ```Python
 @dataclass
@@ -144,7 +140,7 @@ class CustomInit:
 
 In this example, when the class is instantiated with `CustomInit(1, 2)`, the field `c` is calculated as `0.5`.
 
-Like with any function, your `__post_init__` can also take parameters which exist only in the context of `__post_init__`. These can be used for arguments to the class that you do not want to store as fields. A parameter cannot have the name of a class field; this again is to prevent ambiguity.
+Like with any function, your `__post_init__` can also take parameters which exist only in the context of `__post_init__`. These can be used for arguments to the class that you do not want to store as fields. A parameter cannot have the name of a class field; this is to prevent ambiguity.
 
 
 #### Default values
@@ -181,7 +177,7 @@ This decorator takes advantage of two equally important features added in Python
 > The term "field", as used in this section, refers to a class-level variable with a type annotation. For more information, see the documentation for [`fields()`](#fieldsdataclass-internalsfalse) below.
 
 ##### `init`
-If true (the default), generate an [`__init__`](https://docs.python.org/3/reference/datamodel.html#object.__init__) method that has as parameters all fields up its inheritance chain. These are ordered in definition order, with all fields with default values placed towards the end, following all fields without them. The method initialises the class by applying these parameters to the class as attributes.
+If true (the default), generate an [`__init__`](https://docs.python.org/3/reference/datamodel.html#object.__init__) method that has as parameters all fields up its inheritance chain. These are ordered in definition order, with all fields with default values placed towards the end, following all fields without them. The method initialises the class by applying these parameters to the class as attributes. If defined, it will also call `__post_init__` with any remaining arguments.
 
 This ordering is an important distinction from dataclasses, where all fields are simply ordered in definition order, and is what allows dataclassy's data classes to be far more flexible in terms of inheritance. 
 
