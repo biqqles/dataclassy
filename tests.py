@@ -120,7 +120,7 @@ class Tests(unittest.TestCase):
 
     def test_repr(self):
         """Test correct generation of a __repr__ method."""
-        self.assertEqual(repr(self.b), "Beta(a=1, b=2, c=2, d=4, f=3)")
+        self.assertEqual(repr(self.b), 'Beta(a=1, b=2, c=2, d=4, f=3)')
 
         @dataclass
         class Recursive:
@@ -327,8 +327,8 @@ class Tests(unittest.TestCase):
             def __post_init__(self, c):
                 self.c = c
 
-        self.assertTrue(hasattr(InitInSubClass, "__post_init__"))
-        self.assertFalse(hasattr(NoInitInSubClass, "__post_init__"))
+        self.assertTrue(hasattr(InitInSubClass, '__post_init__'))
+        self.assertFalse(hasattr(NoInitInSubClass, '__post_init__'))
         init_in_sub_class = InitInSubClass(0, 1)
         self.assertEqual(init_in_sub_class.c, 1)
 
@@ -384,7 +384,7 @@ class Tests(unittest.TestCase):
         """Test subclassing of DataClassMeta."""
         class DataClassMetaSubclass(DataClassMeta):
             def __new__(mcs, name, bases, dict_):
-                dict_["get_a"] = lambda self: self.a
+                dict_['get_a'] = lambda self: self.a
                 return super().__new__(mcs, name, bases, dict_)
 
         @dataclass(meta=DataClassMetaSubclass)
@@ -511,7 +511,6 @@ class Tests(unittest.TestCase):
 
         self.assertIs(D.f, B.f)
 
-        
     def test_factory(self):
         """Test factory()."""
         class CustomClassDefault:
