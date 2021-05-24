@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='dataclassy',
-    version='0.9.0',
+    version='0.10.0',
 
     author='biqqles',
     author_email='biqqles@protonmail.com',
