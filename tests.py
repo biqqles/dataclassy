@@ -438,7 +438,7 @@ class Tests(unittest.TestCase):
 
     def test_inheritance(self):
         """Test that method inheritance works as expected."""
-        @dataclass
+        @dataclass(iter=True)
         class Parent:
             a: int
 
@@ -449,15 +449,19 @@ class Tests(unittest.TestCase):
                 return
 
         class Child(Parent):
-            pass
+            b: int = 0
 
         class Grandchild(Child):
             def __hash__(self):
                 return 2 * super().__hash__()
 
+        # user-defined methods are untouched
         self.assertIs(Parent.__hash__, Child.__hash__)
         self.assertIs(Parent.user_method, Child.user_method)
         self.assertEqual(hash(Parent(1)) * 2, hash(Grandchild(1)))
+
+        # dataclassy-defined methods are replaced
+        self.assertIsNot(Parent.__init__, Child.__init__)
 
     def test_multiple_inheritance_post_init(self):
         """Test post-init execution under multiple-inheritance."""
