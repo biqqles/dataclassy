@@ -71,11 +71,13 @@ class DataClassMeta(type):
 
         # collect functions, annotations, defaults, slots and options from this class' ancestors, in definition order
 
-        all_funcs = {}
         all_annotations = {}
         all_defaults = {}
         all_slots = set()
         options = dict(mcs.DEFAULT_OPTIONS)
+
+        # collect all attributes defined up the inheritance chain, ignoring those from object
+        all_attrs = {a for b in bases for a in dir(b) if getattr(b, a) is not getattr(object, a, ...)} | dict_.keys()
 
         dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
         for b in dataclass_bases + [dict_]:
@@ -84,12 +86,7 @@ class DataClassMeta(type):
             all_slots.update(b.get('__slots__', set()))
             options.update(b.get('__dataclass__', {}))
 
-            # collect all user-defined functions
-            # TODO: this actually can just update with b, but this might result in a slight change in behaviour.
-            # Think about this simplification (and simplifying post_init) later.
-            all_funcs.update({f: v for f, v in b.items() if is_user_func(v)})
-
-        post_init = '__post_init__' in all_funcs or any(hasattr(b, '__post_init__') for b in bases)
+        post_init = '__post_init__' in all_attrs
 
         # update options and defaults for *this* class
 
@@ -122,23 +119,23 @@ class DataClassMeta(type):
             dict_['__init__'] = dict_['__post_init__']
 
         if options['repr']:
-            '__repr__' in all_funcs or dict_.setdefault('__repr__', __repr__)
+            '__repr__' in all_attrs or dict_.setdefault('__repr__', __repr__)
 
         if options['eq']:
-            '__eq__' in all_funcs or dict_.setdefault('__eq__', __eq__)
+            '__eq__' in all_attrs or dict_.setdefault('__eq__', __eq__)
 
         if options['iter']:
-            '__iter__' in all_funcs or dict_.setdefault('__iter__', __iter__)
+            '__iter__' in all_attrs or dict_.setdefault('__iter__', __iter__)
 
         if options['frozen']:
-            '__delattr__' in all_funcs or dict_.setdefault('__delattr__', __setattr__)
-            '__setattr__' in all_funcs or dict_.setdefault('__setattr__', __setattr__)
+            '__delattr__' in all_attrs or dict_.setdefault('__delattr__', __setattr__)
+            '__setattr__' in all_attrs or dict_.setdefault('__setattr__', __setattr__)
 
         if options['order']:
-            '__lt__' in all_funcs or dict_.setdefault('__lt__', __lt__)
+            '__lt__' in all_attrs or dict_.setdefault('__lt__', __lt__)
 
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
-            '__hash__' in all_funcs or dict_.setdefault('__hash__', generate_hash(all_annotations))
+            '__hash__' in all_attrs or dict_.setdefault('__hash__', generate_hash(all_annotations))
 
         return super().__new__(mcs, name, bases, dict_)
 
