@@ -114,9 +114,6 @@ class DataClassMeta(type):
         if options['init'] and all_annotations and '__init__' not in all_attrs:
             dict_.setdefault('__init__', generate_init(all_annotations, all_defaults, post_init,
                                                        options['kwargs'], options['frozen']))
-        elif options['init'] and '__init__' not in all_attrs and '__post_init__' in dict_:
-            # if no fields to set, alias __post_init__ to __post_init__ so it is always called (unless init=False)
-            dict_['__init__'] = dict_['__post_init__']
 
         if options['repr']:
             '__repr__' in all_attrs or dict_.setdefault('__repr__', __repr__)

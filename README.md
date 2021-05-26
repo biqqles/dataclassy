@@ -126,7 +126,7 @@ To change the type, or to add or change the default value of a field in a subcla
 #### Post-initialisation processing
 If an initialiser is requested (`init=True`), dataclassy automatically sets the attributes of the class upon initialisation. You can define code that should run after this happens - this is called _post-init processing_.  
 
-The method that contains this logic should be called `__post_init__`. Unlike with dataclasses, unless `init=False`, dataclassy will ensure this method is always run, even if the class has no fields.
+The method that contains this logic should be called `__post_init__`. Like with dataclasses, if `init=False` or the class has no fields, `__post_init__` will not be called.
 
 ```Python
 @dataclass

@@ -282,7 +282,7 @@ class Tests(unittest.TestCase):
 
         @dataclass
         class Empty:
-            def __post_init__(self, a):
+            def __init__(self, a):  # TODO: change into test for __post_init__ aliasing when that feature is added
                 pass
 
         Empty(0)
