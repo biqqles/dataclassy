@@ -463,6 +463,16 @@ class Tests(unittest.TestCase):
         # dataclassy-defined methods are replaced
         self.assertIsNot(Parent.__init__, Child.__init__)
 
+        @dataclass(unsafe_hash=True)
+        class Parent2:
+            a: int
+
+        class Child2(Parent2):
+            b: int
+
+        # dataclassy-defined methods are regenerated for subclasses
+        self.assertIsNot(Parent2.__hash__, Child2.__hash__)
+
     def test_multiple_inheritance_post_init(self):
         """Test post-init execution under multiple-inheritance."""
         @dataclass
