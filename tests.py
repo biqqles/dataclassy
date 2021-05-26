@@ -8,6 +8,7 @@
 """
 import unittest
 from typing import Any, Dict, List, Tuple, Optional, Type, Union
+from abc import ABCMeta
 from collections import OrderedDict, namedtuple
 from inspect import signature
 from platform import python_implementation
@@ -544,6 +545,19 @@ class Tests(unittest.TestCase):
 
         with_factories_2 = WithFactories()
         self.assertIsNot(with_factories.a, with_factories_2.a)
+
+    def test_abc(self):
+        """Test subclassing a class with metaclass=ABCMeta. This once caused a weird Attribute Error
+        (see issue #46)"""
+        @dataclass
+        class A(metaclass=ABCMeta):
+            pass
+
+        class B(A):
+            pass
+
+        class C(B):
+            pass
 
 
 if __name__ == '__main__':
