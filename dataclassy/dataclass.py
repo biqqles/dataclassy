@@ -77,7 +77,7 @@ class DataClassMeta(type):
         options = dict(mcs.DEFAULT_OPTIONS)
 
         # record all functions defined by the user up through the inheritance chain
-        all_attrs = {a for b in bases for a in dir(b) if is_user_func(getattr(b, a))} | dict_.keys()
+        all_attrs = {a for b in bases for a in dir(b) if is_user_func(getattr(b, a, None))} | dict_.keys()
 
         dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
         for b in dataclass_bases + [dict_]:
