@@ -83,16 +83,45 @@ class Tests(unittest.TestCase):
 
     def test_readme(self):
         """Test all examples from the project readme."""
-        @dataclass  # with default parameters
+        from dataclassy import dataclass
+        from typing import Dict
+
+        @dataclass
         class Pet:
             name: str
-            age: int
             species: str
-            foods: List[str] = []
-            SOME_CONSTANT = 232
+            fluffy: bool
+            foods: Dict[str, int] = {}
 
         self.assertEqual(parameters(Pet),
-                         OrderedDict({'name': str, 'age': int, 'species': str, 'foods': (List[str], [])}))
+                         OrderedDict({'name': str, 'species': str, 'fluffy': bool, 'foods': (Dict[str, int], {})}))
+
+        @dataclass
+        class HungryPet(Pet):
+            hungry: bool
+
+        self.assertEqual(parameters(HungryPet),
+                         OrderedDict({'name': str, 'species': str, 'fluffy': bool,
+                                      'hungry': bool, 'foods': (Dict[str, int], {})}))
+
+        @dataclass
+        class CustomInit:
+            a: int
+            b: int
+
+            def __post_init__(self):
+                self.c = self.a / self.b
+
+        self.assertEqual(CustomInit(1, 2).c, 0.5)
+
+        class MyClass:
+            pass
+
+        @dataclass
+        class CustomDefault:
+            m: MyClass = factory(MyClass)
+
+        self.assertIsNot(CustomDefault().m, CustomDefault().m)
 
     def test_internal(self):
         """Test the internal type hint."""
