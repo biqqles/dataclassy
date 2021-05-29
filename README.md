@@ -45,12 +45,12 @@ This section describes various motivations for using **dataclassy** over **datac
 dataclassy's API is strongly influenced by dataclasses', but with a focus on minimalism and elegance.
 
 - there's no `field` or `Field`. Use [`Hashed`](#hashed), [`Internal`](#internal) or [`factory`](#factorycreator) to replicate its functions
-- there's no need for `InitVar`. Simply add arguments to `__post_init__`
+- there's no `InitVar`. Simply add arguments to `__post_init__`
 - there's no need for `ClassVar`. Simply omit the field's type hint to ignore it
 
 #### Also consider
 
-- [`attrs`](https://github.com/python-attrs/attrs) if you need complex validation and con
+- [`attrs`](https://github.com/python-attrs/attrs) if you need complex validation and type conversions
 - [`pydantic`](https://github.com/samuelcolvin/pydantic) if you need strict type checking
 
 
