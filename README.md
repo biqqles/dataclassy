@@ -101,7 +101,7 @@ dataclassy has several important differences from dataclasses, mainly reflective
 |*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
 |*dynamic defaults*               |`b: MyClass = field(default_factory=MyClass)`|`b: MyClass = factory(MyClass)`        |
 |*field excluded from `repr`*     |`c: int = field(repr=False)`                |`Internal` type wrapper or `_name`      |
-|*"late init" field*              |`d: int = field(init=False`)                |`d: int = None`                         |
+|*"late init" field*              |`d: int = field(init=False)`                |`d: int = None`                         |
 
 There are a couple of minor differences, too:
 
