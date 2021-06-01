@@ -58,8 +58,8 @@ def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
 
 class DataClassMeta(type):
     """The metaclass that implements data class behaviour."""
-    DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False,
-                           order=False, unsafe_hash=True, hide_internals=True)
+    DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, order=False, unsafe_hash=False,
+                           kwargs=False, slots=False, hide_internals=True)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         """Create a new data class."""
