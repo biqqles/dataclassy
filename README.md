@@ -232,6 +232,9 @@ If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.
 ##### `kw_only`
 If true, all parameters to the generated `__init__` are marked as **keyword-only**. This includes arguments passed through to `__post_init__`.
 
+##### `match_args`
+If true (the default), generate a `__match_args__` attribute that enables structural pattern matching on Python 3.10+.
+
 ##### `iter`
 If true, generate an [`__iter__`](https://docs.python.org/3/reference/datamodel.html#object.__iter__) method that returns the values of the class's fields, in order of definition. This can be used to destructure a data class instance, as with a Scala `case class` or a Python `namedtuple`.
 

@@ -12,7 +12,7 @@ from abc import ABCMeta
 from collections import OrderedDict, namedtuple
 from inspect import signature
 from platform import python_implementation
-from sys import getsizeof
+from sys import getsizeof, version_info
 
 from dataclassy import *
 from dataclassy.dataclass import DataClassMeta
@@ -270,6 +270,27 @@ class Tests(unittest.TestCase):
 
         with self.assertRaises(TypeError):
             KwOnlyWithPostInit(3.0, a=1, b='2')
+
+    def test_match_args(self):
+        """Test generation of a __match_args__ attribute."""
+        @dataclass
+        class PatternMatchable:
+            x: int
+            y: int
+
+        self.assertEqual(PatternMatchable.__match_args__, ('x', 'y'))
+
+        # Python 3.10 pattern matching is invalid syntax on older versions to needs to be parsed at runtime
+        if version_info < (3, 10):
+            return
+
+        to_be_matched = (0, 1)
+        namespace = locals().copy()
+        exec("""match PatternMatchable(*to_be_matched):
+             case PatternMatchable(a, b):
+                 matched_value = a, b""", {}, namespace)
+
+        self.assertEqual(namespace['matched_value'], to_be_matched)
 
     def test_empty_dataclass(self):
         """Test data classes with no fields and data classes with only class fields."""

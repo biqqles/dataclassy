@@ -59,7 +59,7 @@ def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
 class DataClassMeta(type):
     """The metaclass that implements data class behaviour."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, frozen=False, order=False, unsafe_hash=False, kw_only=False,
-                           iter=False, kwargs=False, slots=False, hide_internals=True)
+                           match_args=True, iter=False, kwargs=False, slots=False, hide_internals=True)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         """Create a new data class."""
@@ -137,9 +137,14 @@ class DataClassMeta(type):
 
     # noinspection PyMissingConstructor,PyUnresolvedReferences,PyTypeChecker,PyUnusedLocal
     def __init__(cls, *args, **kwargs):
-        if cls.__dataclass__['eq'] and cls.__dataclass__['order']:
+        options = cls.__dataclass__
+
+        if options['eq'] and options['order']:
             from functools import total_ordering
             total_ordering(cls)
+
+        if options['match_args']:  # TODO: check before overwriting
+            cls.__match_args__ = tuple(fields(cls))
 
         # determine a static expression for an instance's fields as a tuple, then evaluate this to create a property
         # allowing efficient representation for internal methods
