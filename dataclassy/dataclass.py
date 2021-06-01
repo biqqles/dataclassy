@@ -112,8 +112,7 @@ class DataClassMeta(type):
             del dict_['__slots__']
 
         if options['init'] and all_annotations and '__init__' not in all_attrs:
-            dict_.setdefault('__init__', generate_init(all_annotations, all_defaults, post_init,
-                                                       options['kwargs'], options['frozen']))
+            dict_.setdefault('__init__', generate_init(all_annotations, all_defaults, options, post_init))
 
         if options['repr']:
             '__repr__' in all_attrs or dict_.setdefault('__repr__', __repr__)
@@ -164,14 +163,14 @@ def is_user_func(obj: Any, object_methods=frozenset(vars(object).values())) -> b
     return type(obj) is Function and obj not in object_methods and not hasattr(obj, '__dataclass__')
 
 
-def generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs: bool, frozen: bool) -> Function:
+def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: bool) -> Function:
     """Generate and return an __init__ method for a data class. This method has as parameters all fields of the data
     class. When the data class is initialised, arguments to this function are applied to the fields of the new instance.
     A user-defined __init__, if present, must be aliased to avoid conflicting."""
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in defaults]
     args = ['*args'] if user_init else []
-    kwargs = ['**kwargs'] if user_init or gen_kwargs else []
+    kwargs = ['**kwargs'] if user_init or options['kwargs'] else []
 
     parameters = ', '.join(arguments + default_arguments + args + kwargs)
 
@@ -184,7 +183,7 @@ def generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
                   else n for n in annotations}
 
     # if the class is frozen, use the necessary but far slower object.__setattr__
-    assignments = [f'object.__setattr__(self, {n!r}, {r})' if frozen
+    assignments = [f'object.__setattr__(self, {n!r}, {r})' if options['frozen']
                    else f'self.{n} = {r}' for n, r in references.items()]
 
     # generate the function
@@ -195,7 +194,7 @@ def generate_init(annotations: Dict, defaults: Dict, user_init: bool, gen_kwargs
     return eval_function('__init__', lines, annotations, defaults, default_names)
 
 
-def generate_hash(annotations: Dict) -> Function:
+def generate_hash(annotations: Dict[str, Type]) -> Function:
     """Generate a __hash__ method for a data class. The hashed value consists of a tuple of the instance's type
     followed by any fields marked as "Hashed"."""
     hash_of = ', '.join(['self.__class__', *(f'self.{f}' for f, h in annotations.items() if Hashed.is_hinted(h))])
