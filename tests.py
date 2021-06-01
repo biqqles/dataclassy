@@ -651,6 +651,32 @@ class Tests(unittest.TestCase):
 
         self.assertEqual(namespace['matched_value'], to_be_matched)
 
+    def test_kw_only(self):
+        """Test effect of the kw_only decorator option."""
+        @dataclass(kw_only=True)
+        class KwOnly:
+            a: int
+            b: str
+
+        KwOnly(a=1, b='2')
+
+        with self.assertRaises(TypeError):
+            KwOnly(1, '2')
+
+        with self.assertRaises(TypeError):
+            KwOnly()
+
+        # post-init args also become keyword only
+
+        class KwOnlyWithPostInit(KwOnly):
+            def __post_init__(self, c: float):
+                pass
+
+        KwOnlyWithPostInit(a=1, b='2', c=3.0)
+
+        with self.assertRaises(TypeError):
+            KwOnlyWithPostInit(3.0, a=1, b='2')
+
 
 if __name__ == '__main__':
     unittest.main()

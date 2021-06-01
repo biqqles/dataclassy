@@ -230,6 +230,9 @@ If true, force the generation of a [`__hash__`](https://docs.python.org/3/refere
 ##### `match_args`
 If true (the default), generate a `__match_args__` attribute that enables structural pattern matching on Python 3.10+.
 
+##### `kw_only`
+If true, all parameters to the generated `__init__` are marked as [keyword-only](https://peps.python.org/pep-3102). This includes arguments passed through to `__post_init__`.
+
 ##### `frozen`
 If true, instances are nominally immutable: fields cannot be overwritten or deleted after initialisation in `__init__`. Attempting to do so will raise an `AttributeError`. **Warning: incurs a significant initialisation performance penalty.**
 

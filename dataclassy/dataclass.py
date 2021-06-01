@@ -60,7 +60,7 @@ def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
 class DataClassMeta(type):
     """The metaclass that implements data class behaviour."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
-                           match_args=True, hide_internals=True, iter=False, kwargs=False, slots=False)
+                           kw_only=False, match_args=True, hide_internals=True, iter=False, kwargs=False, slots=False)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         """Create a new data class."""
@@ -170,14 +170,15 @@ def is_user_func(obj: Any, object_methods=frozenset(vars(object).values())) -> b
 
 def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: bool) -> Function:
     """Generate and return an __init__ method for a data class. This method has as parameters all fields of the data
-    class. When the data class is initialised, arguments to this function are applied to the fields of the new instance.
-    A user-defined __init__, if present, must be aliased to avoid conflicting."""
+    class. When the data class is initialised, arguments to this function are applied to the fields of the new
+    instance."""
+    kw_only = ['*'] if options['kw_only'] else []
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in defaults]
-    args = ['*args'] if user_init else []
+    args = ['*args'] if user_init and not kw_only else []
     kwargs = ['**kwargs'] if user_init or options['kwargs'] else []
 
-    parameters = ', '.join(arguments + default_arguments + args + kwargs)
+    parameters = ', '.join(kw_only + arguments + default_arguments + args + kwargs)
 
     # surprisingly, given global lookups are slow, using them is the fastest way to compare a field to its default
     # the alternatives are to look up on self (which wouldn't work when slots=True) or look up self.__defaults__
@@ -190,11 +191,11 @@ def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: b
     assigner = 'object.__setattr__(self, {!r}, {})' if options['frozen'] else 'self.{} = {}'
     assignments = [assigner.format(n, references.get(n, n)) for n in annotations]
 
-    # generate the function
-    lines = [f'def __init__(self, {parameters}):',
-             *assignments,
-             'self.__post_init__(*args, **kwargs)' if user_init else '']
+    # if defined, call __post_init__ with leftover arguments
+    call_post_init = f'self.__post_init__({", ".join(args + kwargs)})' if user_init else ''
 
+    # generate the function
+    lines = [f'def __init__(self, {parameters}):', *assignments, call_post_init]
     return eval_function('__init__', lines, annotations, defaults, {d: defaults[n] for n, d in copied.items()})
 
 
