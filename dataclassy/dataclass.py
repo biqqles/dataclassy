@@ -58,8 +58,8 @@ def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
 
 class DataClassMeta(type):
     """The metaclass that implements data class behaviour."""
-    DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, order=False, unsafe_hash=False,
-                           kwargs=False, slots=False, hide_internals=True)
+    DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, frozen=False, order=False, unsafe_hash=False, kw_only=False,
+                           iter=False, kwargs=False, slots=False, hide_internals=True)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         """Create a new data class."""
@@ -166,13 +166,15 @@ def is_user_func(obj: Any, object_methods=frozenset(vars(object).values())) -> b
 def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: bool) -> Function:
     """Generate and return an __init__ method for a data class. This method has as parameters all fields of the data
     class. When the data class is initialised, arguments to this function are applied to the fields of the new instance.
-    A user-defined __init__, if present, must be aliased to avoid conflicting."""
+    Finally, the generated method will call __post_init__ with leftover arguments, if it is defined."""
+    kw_only = ['*'] if options['kw_only'] else []
     arguments = [a for a in annotations if a not in defaults]
     default_arguments = [f'{a}={a}' for a in defaults]
-    args = ['*args'] if user_init else []
+    args = ['*args'] if user_init and not options['kw_only'] else []
     kwargs = ['**kwargs'] if user_init or options['kwargs'] else []
 
-    parameters = ', '.join(arguments + default_arguments + args + kwargs)
+    parameters = ', '.join(kw_only + arguments + default_arguments + args + kwargs)
+    call_post_init = f"self.__post_init__({', '.join(args + kwargs)})" if user_init else ''
 
     # surprisingly, given global lookups are slow, using them is the fastest way to compare a field to its default
     # the alternatives are to look up on self (which wouldn't work when slots=True) or look up self.__defaults__
@@ -187,9 +189,7 @@ def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: b
                    else f'self.{n} = {r}' for n, r in references.items()]
 
     # generate the function
-    lines = [f'def __init__(self, {parameters}):',
-             *assignments,
-             'self.__post_init__(*args, **kwargs)' if user_init else '']
+    lines = [f'def __init__(self, {parameters}):', *assignments, call_post_init]
 
     return eval_function('__init__', lines, annotations, defaults, default_names)
 

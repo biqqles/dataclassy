@@ -229,6 +229,9 @@ If true, force the generation of a [`__hash__`](https://docs.python.org/3/refere
 ##### `order`
 If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable*. If `eq` is also true, all other comparison methods are also generated. These methods compare this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass). The normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply.
 
+##### `kw_only`
+If true, all parameters to the generated `__init__` are marked as **keyword-only**. This includes arguments passed through to `__post_init__`.
+
 ##### `iter`
 If true, generate an [`__iter__`](https://docs.python.org/3/reference/datamodel.html#object.__iter__) method that returns the values of the class's fields, in order of definition. This can be used to destructure a data class instance, as with a Scala `case class` or a Python `namedtuple`.
 

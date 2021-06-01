@@ -25,6 +25,7 @@ def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options) -> T
     :key order: Generate comparison methods other than __eq__
     :key unsafe_hash: Force generation of __hash__
     :key hide_internals: Hide internal methods in __repr__
+    :key kw_only: Make all parameters to the generated __init__ keyword-only
     :return: The newly created data class
     """
     assert issubclass(meta, DataClassMeta)

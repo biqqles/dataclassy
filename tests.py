@@ -245,6 +245,32 @@ class Tests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del f.b
 
+    def test_kw_only(self):
+        """Test effect of the kw_only decorator option."""
+        @dataclass(kw_only=True)
+        class KwOnly:
+            a: int
+            b: str
+
+        with self.assertRaises(TypeError):
+            KwOnly(1, '2')
+
+        with self.assertRaises(TypeError):
+            KwOnly()
+
+        KwOnly(a=1, b='2')
+
+        # post-init args also become keyword only
+
+        class KwOnlyWithPostInit(KwOnly):
+            def __post_init__(self, c: float):
+                pass
+
+        KwOnlyWithPostInit(a=1, b='2', c=3.0)
+
+        with self.assertRaises(TypeError):
+            KwOnlyWithPostInit(3.0, a=1, b='2')
+
     def test_empty_dataclass(self):
         """Test data classes with no fields and data classes with only class fields."""
         @dataclass
