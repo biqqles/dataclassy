@@ -160,6 +160,9 @@ class Tests(unittest.TestCase):
         r.recurse = r
         self.assertEqual(repr(r), 'Recursive(recurse=...)')
 
+        s = Recursive(r)  # circularly recursive
+        self.assertEqual(repr(s), 'Recursive(recurse=Recursive(recurse=...))')
+
     def test_iter(self):
         """Test correct generation of an __iter__ method."""
         iterable = self.Gamma(0, 1, [2, 3])
