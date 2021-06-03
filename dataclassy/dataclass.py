@@ -9,6 +9,7 @@
 """
 from types import FunctionType as Function
 from typing import Any, Callable, Dict, List, Type, TypeVar, Union, cast
+from reprlib import recursive_repr
 
 DataClass = Any  # type hint for variables that should be data class instances
 
@@ -115,7 +116,7 @@ class DataClassMeta(type):
             dict_.setdefault('__init__', generate_init(all_annotations, all_defaults, options, post_init))
 
         if options['repr']:
-            '__repr__' in all_attrs or dict_.setdefault('__repr__', __repr__)
+            '__repr__' in all_attrs or dict_.setdefault('__repr__', recursive_repr()(__repr__))
 
         if options['eq']:
             '__eq__' in all_attrs or dict_.setdefault('__eq__', __eq__)
@@ -222,8 +223,7 @@ def __iter__(self):
 
 def __repr__(self):
     show_internals = not self.__dataclass__['hide_internals']
-    field_values = ', '.join(f'{f}=...' if v is self
-                             else f'{f}={v!r}' for f, v in values(self, show_internals).items())
+    field_values = ', '.join(f'{f}={v!r}' for f, v in values(self, show_internals).items())
     return f'{type(self).__name__}({field_values})'
 
 
