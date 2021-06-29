@@ -94,14 +94,15 @@ Although dataclassy's API is similar to dataclasses', [compatibility with it is 
 
 dataclassy has several important differences from dataclasses, mainly reflective of its minimalistic style and implementation. These differences are enumerated below and fully expanded on in the next section.
 
-|                                 |dataclasses                                 |dataclassy                              |
-|---------------------------------|:-------------------------------------------|:---------------------------------------|
-|*init-only variables*            |fields with type `InitVar`                  |arguments to `__post_init__`            |
-|*class variables*                |fields with type `ClassVar`                 |fields without type annotation          |
-|*mutable defaults*               |`a: Dict = field(default_factory=dict)`     |`a: Dict = {}`                          |
-|*dynamic defaults*               |`b: MyClass = field(default_factory=MyClass)`|`b: MyClass = factory(MyClass)`        |
-|*field excluded from `repr`*     |`c: int = field(repr=False)`                |`Internal` type wrapper or `_name`      |
-|*"late init" field*              |`d: int = field(init=False)`                |`d: int = None`                         |
+|                                                                                                            | dataclasses                                                | dataclassy                                                               |
+|------------------------------------------------------------------------------------------------------------|------------------------------------------------------------|--------------------------------------------------------------------------|
+| *init-only variables*                                                                                      | fields with type `InitVar`                                 | arguments to `__post_init__`                                             |
+| *class variables*                                                                                          | fields with type `ClassVar`                                | fields without type annotation                                           |
+| *mutable defaults*                                                                                         | `a: Dict = field(default_factory=dict)`                    | `a: Dict = {}`                                                           |
+| *dynamic defaults*                                                                                         | `b: MyClass = field(default_factory=MyClass)`              | `b: MyClass = factory(MyClass)`                                          |
+| *field excluded from `repr`*                                                                               | `c: int = field(repr=False)`                               | `Internal` type wrapper or `_name`                                       |
+| *"late init" field*                                                                                        | `d: int = field(init=False)`                               | `d: int = None`                                                          |
+| *on classes using a metaclass other than `type`, e.g. [ABC](https://docs.python.org/3/library/abc.html)* | <pre> @dataclass <br/> class Foo(ABC): <br/>    ... </pre> | <pre> @dataclass <br/> class Foo(metaclass=ABCMeta): <br/>    ... </pre> |
 
 There are a couple of minor differences, too:
 
