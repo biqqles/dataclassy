@@ -235,6 +235,20 @@ class Tests(unittest.TestCase):
         if python_implementation() != 'PyPy':  # sizes cannot be determined on PyPy
             self.assertGreater(getsizeof(e) + getsizeof(e.__dict__), getsizeof(self.b))
 
+        # test repeated decorator application (issue #50)
+        @dataclass(slots=True)
+        class Base:
+            foo: int
+
+        @dataclass(slots=True)
+        class Derived(Base):
+            bar: int
+
+        self.assertEqual(Base.__slots__, ('foo',))
+        self.assertEqual(Derived.__slots__, ('bar',))
+
+        Derived(1, 2)
+
     def test_frozen(self):
         """Test correct generation of __setattr__ and __delattr__ for a frozen class."""
         @dataclass(frozen=True)
