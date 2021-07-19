@@ -295,7 +295,7 @@ Use this type hint to indicate that a variable, parameter or field should be a g
 ### Mypy support
 In order to use dataclassy in projects with mypy, you will need to use the mypy plugin. You can create a `mypy.ini` or `.mypy.ini` for such projects with the following content:
 
-```
+```ini
 [mypy]
 plugins = dataclassy.mypy
 ```
