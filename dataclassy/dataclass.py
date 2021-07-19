@@ -11,7 +11,7 @@ from types import FunctionType as Function
 from typing import Any, Callable, Dict, List, Type, TypeVar, Union, cast
 from reprlib import recursive_repr
 
-DataClass = Any  # type hint for variables that should be data class instances
+DataClass = TypeVar('DataClass')  # type hint representing a generic data class instance
 
 
 class Hint(type):
