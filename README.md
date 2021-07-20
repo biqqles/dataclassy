@@ -195,7 +195,7 @@ CustomDefault()  # CustomDefault(m=<__main__.MyClass object at 0x7f8b156fc7d0>)
 
 ## API
 ### Decorator
-#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True, meta=DataClassMeta)`
+#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, unsafe_hash=False, order=False, kwargs=False, slots=False, hide_internals=True, meta=DataClassMeta)`
 The decorator used to signify that a class definition should become a data class. The decorator returns a new data class with generated methods as detailed below. If the class already defines a particular method, it will not be replaced with a generated one.
 
 Without arguments, its behaviour is, superficially, almost identical to its equivalent in the built-in module. However, dataclassy's decorator only needs to be applied once, and all subclasses will become data classes with the same parameters. The decorator can still be reapplied to subclasses in order to change parameters.
