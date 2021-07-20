@@ -195,7 +195,7 @@ CustomDefault()  # CustomDefault(m=<__main__.MyClass object at 0x7f8b156fc7d0>)
 
 ## API
 ### Decorator
-#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True, meta=DataClassMeta)`
+#### `@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, hide_internals=True, iter=False, kwargs=False, slots=False, meta=DataClassMeta)`
 The decorator used to signify that a class definition should become a data class. The decorator returns a new data class with generated methods as detailed below. If the class already defines a particular method, it will not be replaced with a generated one.
 
 Without arguments, its behaviour is, superficially, almost identical to its equivalent in the built-in module. However, dataclassy's decorator only needs to be applied once, and all subclasses will become data classes with the same parameters. The decorator can still be reapplied to subclasses in order to change parameters.
@@ -221,14 +221,17 @@ If true (the default), generate a [`__repr__`](https://docs.python.org/3/referen
 ##### `eq`
 If true (the default), generate an [`__eq__`](https://docs.python.org/3/reference/datamodel.html#object.__eq__) method that compares this data class to another of the same type as if they were tuples created by [`as_tuple`](#as_tupledataclass).
 
-##### `frozen`
-If true, instances are nominally immutable: fields cannot be overwritten or deleted after initialisation in `__init__`. Attempting to do so will raise an `AttributeError`. **Warning: incurs a significant initialisation performance penalty.**
+##### `order`
+If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable*. If `eq` is also true, all other comparison methods are also generated. These methods compare this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass). The normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply.
 
 ##### `unsafe_hash`
 If true, force the generation of a [`__hash__`](https://docs.python.org/3/reference/datamodel.html#object.__hash__) method that attempts to hash the class as if it were a tuple of its hashable fields. If `unsafe_hash` is false, `__hash__` will only be generated if `eq` and `frozen` are both true.
 
-##### `order`
-If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable*. If `eq` is also true, all other comparison methods are also generated. These methods compare this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass). The normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply.
+##### `frozen`
+If true, instances are nominally immutable: fields cannot be overwritten or deleted after initialisation in `__init__`. Attempting to do so will raise an `AttributeError`. **Warning: incurs a significant initialisation performance penalty.**
+
+##### `hide_internals`
+If true (the default), [internal fields](#internal) are not included in the generated `__repr__`.
 
 ##### `iter`
 If true, generate an [`__iter__`](https://docs.python.org/3/reference/datamodel.html#object.__iter__) method that returns the values of the class's fields, in order of definition. This can be used to destructure a data class instance, as with a Scala `case class` or a Python `namedtuple`.
@@ -238,9 +241,6 @@ If true, add [`**kwargs`](https://docs.python.org/3.3/glossary.html#term-paramet
 
 ##### `slots`
 If true, generate a [`__slots__`](https://docs.python.org/3/reference/datamodel.html#slots) attribute for the class. This reduces the memory footprint of instances and attribute lookup overhead. However, `__slots__` come with a few [restrictions](https://docs.python.org/3/reference/datamodel.html#notes-on-using-slots) (for example, multiple inheritance becomes tricky) that you should be aware of.
-
-##### `hide_internals`
-If true (the default), [internal fields](#internal) are not included in the generated `__repr__`.
 
 ##### `meta`
 Set this parameter to use a metaclass other than dataclassy's own. This metaclass must subclass [`dataclassy.dataclass.DataClassMeta`](dataclassy/dataclass.py).
