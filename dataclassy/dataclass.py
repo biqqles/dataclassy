@@ -60,7 +60,7 @@ def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
 class DataClassMeta(type):
     """The metaclass that implements data class behaviour."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, iter=False, frozen=False, order=False, unsafe_hash=False,
-                           kwargs=False, slots=False, hide_internals=True)
+                           kwargs=False, slots=False, hide_internals=True, cmp_internals=True)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         """Create a new data class."""
@@ -144,7 +144,8 @@ class DataClassMeta(type):
 
         # determine a static expression for an instance's fields as a tuple, then evaluate this to create a property
         # allowing efficient representation for internal methods
-        tuple_expr = ', '.join((*(f'self.{f}' for f in fields(cls)), ''))  # '' ensures closing comma
+        internals = cls.__dataclass__['cmp_internals']
+        tuple_expr = ', '.join((*(f'self.{f}' for f in fields(cls, internals)), ''))  # '' ensures closing comma
         cls.__tuple__ = property(eval(f'lambda self: ({tuple_expr})'))
 
 

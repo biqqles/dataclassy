@@ -195,7 +195,7 @@ CustomDefault()  # CustomDefault(m=<__main__.MyClass object at 0x7f8b156fc7d0>)
 
 ## API
 ### Decorator
-#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True, meta=DataClassMeta)`
+#### `@dataclass(init=True, repr=True, eq=True, iter=False, frozen=False, kwargs=False, slots=False, hide_internals=True, cmp_internals=True, meta=DataClassMeta)`
 The decorator used to signify that a class definition should become a data class. The decorator returns a new data class with generated methods as detailed below. If the class already defines a particular method, it will not be replaced with a generated one.
 
 Without arguments, its behaviour is, superficially, almost identical to its equivalent in the built-in module. However, dataclassy's decorator only needs to be applied once, and all subclasses will become data classes with the same parameters. The decorator can still be reapplied to subclasses in order to change parameters.
@@ -240,7 +240,10 @@ If true, add [`**kwargs`](https://docs.python.org/3.3/glossary.html#term-paramet
 If true, generate a [`__slots__`](https://docs.python.org/3/reference/datamodel.html#slots) attribute for the class. This reduces the memory footprint of instances and attribute lookup overhead. However, `__slots__` come with a few [restrictions](https://docs.python.org/3/reference/datamodel.html#notes-on-using-slots) (for example, multiple inheritance becomes tricky) that you should be aware of.
 
 ##### `hide_internals`
-If true (the default), [internal fields](#internal) are not included in the generated `__repr__`.
+If true (the default), [internal fields](#internal) are *not* included in the generated `__repr__`.
+
+##### `cmp_internals`
+If true (the default), [internals fields](#internal) *are* included when computing [equality](#eq), [ordering](#order), and [iteration](#iter).
 
 ##### `meta`
 Set this parameter to use a metaclass other than dataclassy's own. This metaclass must subclass [`dataclassy.dataclass.DataClassMeta`](dataclassy/dataclass.py).

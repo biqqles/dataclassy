@@ -25,6 +25,7 @@ def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options) -> T
     :key order: Generate comparison methods other than __eq__
     :key unsafe_hash: Force generation of __hash__
     :key hide_internals: Hide internal methods in __repr__
+    :key cmp_internals: Use internal fields to generate __tuple__, used in eq, cmp, and iter
     :return: The newly created data class
     """
     assert issubclass(meta, DataClassMeta)
