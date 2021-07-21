@@ -6,7 +6,7 @@
 
  This file defines functions which operate on data classes.
 """
-from typing import Any, Callable, Dict, Tuple, Type
+from typing import Any, Callable, Dict, Tuple, Type, Union
 
 from .dataclass import DataClassMeta, DataClass, Internal
 
@@ -21,7 +21,7 @@ def is_dataclass_instance(obj: Any) -> bool:
     return isinstance(type(obj), DataClassMeta)
 
 
-def fields(dataclass: Type[DataClass], internals=False) -> Dict[str, Type]:
+def fields(dataclass: Union[DataClass, Type[DataClass]], internals=False) -> Dict[str, Type]:
     """Return a dict of `dataclass`'s fields and their types. `internals` selects whether to include internal fields.
     `dataclass` can be either a data class or an instance of a data class. A field is defined as a class-level variable
     with a type annotation."""
