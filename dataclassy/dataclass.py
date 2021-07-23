@@ -80,7 +80,7 @@ class DataClassMeta(type):
         # record all functions defined by the user up through the inheritance chain
         all_attrs = {a for b in bases for a in dir(b) if is_user_func(getattr(b, a, None))} | dict_.keys()
 
-        dataclass_bases = [vars(b) for b in bases if hasattr(b, '__dataclass__')]
+        dataclass_bases = [vars(b) for b in bases if isinstance(b, mcs)]
         for b in dataclass_bases + [dict_]:
             all_annotations.update(b.get('__annotations__', {}))
             all_defaults.update(b.get('__defaults__', {}))
