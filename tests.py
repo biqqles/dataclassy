@@ -61,7 +61,17 @@ class Tests(unittest.TestCase):
             h: List['Epsilon']
             _i: int = 0
 
-        self.Alpha, self.Beta, self.Gamma, self.Delta, self.Epsilon = Alpha, Beta, Gamma, Delta, Epsilon
+        @dataclass(iter=True, order=True, hide_internals=False)
+        class Zeta:
+            a: int
+            _b: int
+
+        @dataclass(iter=True, order=True)
+        class Eta:
+            a: int
+            _b: int
+
+        self.Alpha, self.Beta, self.Gamma, self.Delta, self.Epsilon, self.Zeta, self.Eta = Alpha, Beta, Gamma, Delta, Epsilon, Zeta, Eta
         self.NT = NT
         self.b = self.Beta(1, 2, 3)
         self.e = self.Epsilon((self.NT(1, 2, 3)), [self.Epsilon(4, 5, 6)])
@@ -171,12 +181,25 @@ class Tests(unittest.TestCase):
         self.assertEqual(b, 2)
         self.assertEqual(f, [2, 3])
 
+        # test with and without hide_internals
+        iterable = self.Zeta(0, 1)
+        a, _b = iterable
+        self.assertEqual(a, 0)
+        self.assertEqual(_b, 1)
+        iterable = self.Eta(0, 1)
+        with self.assertRaises(ValueError):
+            a, _b = iterable
+
     def test_eq(self):
         """Test correct generation of an __eq__ method."""
         self.assertEqual(self.b, self.b)
         unequal_b = self.Beta(10, 20, 30)
         self.assertNotEqual(self.b, unequal_b)
         self.assertNotEqual(self.b, [0])  # test comparisons with non-dataclasses
+
+        # test with and without hide_internals
+        self.assertNotEqual(self.Zeta(0, 0), self.Zeta(0, 1))
+        self.assertEqual(self.Eta(0, 0), self.Eta(0, 1))
 
     def test_order(self):
         """Test correct generation of comparison methods."""
@@ -202,6 +225,10 @@ class Tests(unittest.TestCase):
 
         with self.assertRaises(TypeError):  # test absence of total_ordering if eq is false
             PartiallyOrderable() >= PartiallyOrderable()
+
+        # test with and without hide_internals
+        self.assertLess(self.Zeta(0, 0), self.Zeta(0, 1))
+        self.assertFalse(self.Eta(0, 0) < self.Eta(0, 1))
 
     def test_hashable(self):
         """Test correct generation of a __hash__ method."""

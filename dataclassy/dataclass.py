@@ -144,7 +144,8 @@ class DataClassMeta(type):
 
         # determine a static expression for an instance's fields as a tuple, then evaluate this to create a property
         # allowing efficient representation for internal methods
-        tuple_expr = ' '.join(f'self.{f},' for f in fields(cls))
+        internals = not cls.__dataclass__['hide_internals']
+        tuple_expr = ' '.join(f'self.{f},' for f in fields(cls, internals))
         cls.__tuple__ = property(eval(f'lambda self: ({tuple_expr})'))
 
 
