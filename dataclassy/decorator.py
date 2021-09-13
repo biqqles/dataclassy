@@ -21,7 +21,7 @@ def dataclass(cls: Optional[type] = None, *, meta=DataClassMeta, **options) -> T
     :key order: Generate comparison methods other than __eq__
     :key unsafe_hash: Force generation of __hash__
     :key frozen: Allow field reassignment after initialisation
-    :key hide_internals: Hide internal methods in __repr__
+    :key hide_internals: Hide internal methods in __repr__, __iter__ and comparison methods
     :key iter: Generate an __iter__ method
     :key kwargs: Append **kwargs to the list of initialiser parameters
     :key slots: Generate __slots__

@@ -27,7 +27,7 @@ This section describes various motivations for using **dataclassy** over **datac
     - [`slots`](#slots) generates `__slots__` to reduce memory footprint and improve attribute lookup performance
     - [`kwargs`](#kwargs) appends `**kwargs` to `__init__`'s parameter list to consume unexpected arguments
     - [`iter`](#iter) allows class instances to be destructured, like named tuples
-    - [`hide_internals`](#hide_internals) automatically hides private fields from `__repr__`
+    - [`hide_internals`](#hide_internals) automatically hides private fields from `__repr__` and excludes them from comparison and iteration
 - `@dataclass` usage and options are inherited (subclasses do not have to reuse the decorator)
 - fields can be in any order - fields with defaults are [reordered](#parameter-reordering) - making inheritance feasible
 - mutable containers (`list`, `set`, `dict` and more) are [automatically copied](#default-values) when used as default values
@@ -216,13 +216,13 @@ This ordering is an important distinction from dataclasses, where all fields are
 A shallow copy will be created for mutable arguments (defined as those defining a `copy` method). This means that default field values that are mutable (e.g. a list) will not be mutated between instances.
 
 ##### `repr`
-If true (the default), generate a [`__repr__`](https://docs.python.org/3/reference/datamodel.html#object.__repr__) method that displays all fields (or if `hide_internals` is true, all fields excluding internal ones) of the data class instance and their values.
+If true (the default), generate a [`__repr__`](https://docs.python.org/3/reference/datamodel.html#object.__repr__) method that displays all fields (or if [`hide_internals`](#hide_internals) is true, all fields excluding [internal](#internal) ones) of the data class instance and their values.
 
 ##### `eq`
-If true (the default), generate an [`__eq__`](https://docs.python.org/3/reference/datamodel.html#object.__eq__) method that compares this data class to another of the same type as if they were tuples created by [`as_tuple`](#as_tupledataclass).
+If true (the default), generate an [`__eq__`](https://docs.python.org/3/reference/datamodel.html#object.__eq__) method that compares this data class to another of the same type as if they were tuples created by [`as_tuple`](#as_tupledataclass), excluding [internal fields](#internal) if [`hide_internals`](#hide_internals) is true.
 
 ##### `order`
-If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable*. If `eq` is also true, all other comparison methods are also generated. These methods compare this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass). The normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply.
+If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.__lt__) method is generated, making the class *orderable*. If `eq` is also true, all other comparison methods are also generated. These methods compare this data class to another of the same type (or a subclass) as if they were tuples created by [`as_tuple`](#as_tupledataclass), excluding [internal fields](#internal) if [`hide_internals`](#hide_internals) is true. The normal rules of [lexicographical comparison](https://docs.python.org/3/reference/expressions.html#value-comparisons) apply.
 
 ##### `unsafe_hash`
 If true, force the generation of a [`__hash__`](https://docs.python.org/3/reference/datamodel.html#object.__hash__) method that attempts to hash the class as if it were a tuple of its hashable fields. If `unsafe_hash` is false, `__hash__` will only be generated if `eq` and `frozen` are both true.
@@ -231,10 +231,10 @@ If true, force the generation of a [`__hash__`](https://docs.python.org/3/refere
 If true, instances are nominally immutable: fields cannot be overwritten or deleted after initialisation in `__init__`. Attempting to do so will raise an `AttributeError`. **Warning: incurs a significant initialisation performance penalty.**
 
 ##### `hide_internals`
-If true (the default), [internal fields](#internal) are not included in the generated `__repr__`.
+If true (the default), [internal fields](#internal) are not included in the generated [`__repr__`](#repr), comparison functions ([`__eq__`](#eq), [ `__lt__`](#order), etc.), or [`__iter__`](#iter).
 
 ##### `iter`
-If true, generate an [`__iter__`](https://docs.python.org/3/reference/datamodel.html#object.__iter__) method that returns the values of the class's fields, in order of definition. This can be used to destructure a data class instance, as with a Scala `case class` or a Python `namedtuple`.
+If true, generate an [`__iter__`](https://docs.python.org/3/reference/datamodel.html#object.__iter__) method that returns the values of the class's fields, in order of definition, noting that [internal fields](#internal) are excluded when [`hide_internals`](#hide_internals) is true. This can be used to destructure a data class instance, as with a Scala `case class` or a Python `namedtuple`.
 
 ##### `kwargs`
 If true, add [`**kwargs`](https://docs.python.org/3.3/glossary.html#term-parameter) to the end of the parameter list for `__init__`. This simplifies data class instantiation from dictionaries that may have keys in addition to the fields of the data class (i.e. `SomeDataClass(**some_dict)`).
