@@ -178,22 +178,21 @@ def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: b
 
     # surprisingly, given global lookups are slow, using them is the fastest way to compare a field to its default
     # the alternatives are to look up on self (which wouldn't work when slots=True) or look up self.__defaults__
-    default_names = {f'default_{n}': v for n, v in defaults.items() if hasattr(v, 'copy')}
+    copied = {n: f'd_{n}' for n, v in defaults.items() if hasattr(v, 'copy')}
 
     # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
-    references = {n: f'{n}.copy() if {n} is default_{n} else {n}' if f'default_{n}' in default_names else n
-                  for n in annotations}
+    references = {n: f'{n}.copy() if {n} is {d} else {n}' for n, d in copied.items()}
 
     # if the class is frozen, use the necessary but far slower object.__setattr__
-    assignments = [f'object.__setattr__(self, {n!r}, {r})' if options['frozen']
-                   else f'self.{n} = {r}' for n, r in references.items()]
+    assigner = 'object.__setattr__(self, {!r}, {})' if options['frozen'] else 'self.{} = {}'
+    assignments = [assigner.format(n, references.get(n, n)) for n in annotations]
 
     # generate the function
     lines = [f'def __init__(self, {parameters}):',
              *assignments,
              'self.__post_init__(*args, **kwargs)' if user_init else '']
 
-    return eval_function('__init__', lines, annotations, defaults, default_names)
+    return eval_function('__init__', lines, annotations, defaults, {d: defaults[n] for n, d in copied.items()})
 
 
 def generate_hash(annotations: Dict[str, Type]) -> Function:
