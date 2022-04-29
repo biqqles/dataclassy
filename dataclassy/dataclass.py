@@ -178,10 +178,10 @@ def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: b
 
     # surprisingly, given global lookups are slow, using them is the fastest way to compare a field to its default
     # the alternatives are to look up on self (which wouldn't work when slots=True) or look up self.__defaults__
-    default_names = {f'default_{n}': v for n, v in defaults.items()}
+    default_names = {f'default_{n}': v for n, v in defaults.items() if hasattr(v, 'copy')}
 
     # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
-    references = {n: f'{n}.copy() if {n} is default_{n} else {n}' if hasattr(defaults.get(n), 'copy') else n
+    references = {n: f'{n}.copy() if {n} is default_{n} else {n}' if f'default_{n}' in default_names else n
                   for n in annotations}
 
     # if the class is frozen, use the necessary but far slower object.__setattr__
