@@ -181,8 +181,8 @@ def generate_init(annotations: Dict, defaults: Dict, options: Dict, user_init: b
     default_names = {f'default_{n}': v for n, v in defaults.items()}
 
     # determine what to do with arguments before assignment. If the argument matches a mutable default, make a copy
-    references = {n: f'{n}.copy() if {n} is default_{n} else {n}' if n in defaults and hasattr(defaults[n], 'copy')
-                  else n for n in annotations}
+    references = {n: f'{n}.copy() if {n} is default_{n} else {n}' if hasattr(defaults.get(n), 'copy') else n
+                  for n in annotations}
 
     # if the class is frozen, use the necessary but far slower object.__setattr__
     assignments = [f'object.__setattr__(self, {n!r}, {r})' if options['frozen']
