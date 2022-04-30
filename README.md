@@ -3,8 +3,6 @@
 
 In short, dataclassy is a library for moving data around your Python programs that's optimised for speed, simplicity and developer happiness.
 
----
-
 ```python
 from dataclassy import dataclass
 from typing import Dict
@@ -16,11 +14,13 @@ class Pet:
     fluffy: bool
     foods: Dict[str, int] = {}
 ```
----
 
 
 ## Why use dataclassy?
 This section describes various motivations for using **dataclassy** over **dataclasses**.
+
+#### Backwards compatibility
+dataclassy implements the decorator options of the latest version of dataclasses, plus its own, such that they are compatible back to Python 3.6. It is [tested against](.github/workflows/ci.yml) CPython 3.6 through 3.10 and PyPy 3.6 through 3.8.
 
 #### Upgrade your data classes
 - new decorator options
@@ -30,14 +30,14 @@ This section describes various motivations for using **dataclassy** over **datac
     - [`hide_internals`](#hide_internals) automatically hides private fields from `__repr__` and excludes them from comparison and iteration
 - `@dataclass` usage and options are inherited (subclasses do not have to reuse the decorator)
 - fields can be in any order - fields with defaults are [reordered](#parameter-reordering) - making inheritance feasible
-- mutable containers (`list`, `set`, `dict` and more) are [automatically copied](#default-values) when used as default values
+- mutable default values (`list`, `set`, `dict` and more) are [automatically copied](#default-values) upon initialisation
 - new functions: [`is_dataclass_instance`](#is_dataclass_instanceobj) and [`values`](#valuesdataclass-internalsfalse)
 
 #### Additionally, dataclassy
-- implements all the decorator options of dataclasses
-- is tiny (~150 LOC; about 25% the size of dataclasses)
+- implements all the decorator options and functions of dataclasses
+- is tiny (~160 LOC; less than 25% the size of dataclasses)
+- has no external dependencies, and no stdlib imports other than `types`, `typing` and `reprlib`
 - is [fast](benchmarks.py), matching dataclasses' performance when `slots=False` and significantly exceeding it when `slots=True`
-- is [tested against](.github/workflows/ci.yml) CPython 3.6 - 3.10 and PyPy 3.6 - 3.7
 - supports multiple inheritance and custom metaclasses
 - comes with [support for mypy](#mypy-support)
 
