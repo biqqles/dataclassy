@@ -227,6 +227,5 @@ def __repr__(self):
     return f'{type(self).__name__}({field_values})'
 
 
-# noinspection PyUnusedLocal
-def __setattr__(self, *args):
+def __setattr__(*_):
     raise AttributeError('Frozen class')
