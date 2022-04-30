@@ -12,7 +12,7 @@ from abc import ABCMeta
 from collections import OrderedDict, namedtuple
 from inspect import signature
 from platform import python_implementation
-from sys import getsizeof
+from sys import getsizeof, version_info
 
 from dataclassy import *
 from dataclassy.dataclass import DataClassMeta
@@ -631,6 +631,25 @@ class Tests(unittest.TestCase):
 
         class C(B):
             pass
+
+    def test_match_args(self):
+        """Test generation of a __match_args__ attribute."""
+
+        # __match_args__ should be tuple in order of parameters to __init__
+        self.assertEqual(self.Alpha.__match_args__, ('a', 'c', 'b'))
+        self.assertEqual(tuple(parameters(self.Beta)), self.Beta.__match_args__)
+
+        # Python 3.10 pattern matching is invalid syntax on older versions to needs to be parsed at runtime
+        if version_info < (3, 10):
+            return
+
+        to_be_matched = (0, 2, 1)
+        namespace = locals().copy()
+        exec("""match self.Alpha(*to_be_matched):
+             case self.Alpha(a, c, b):
+                 matched_value = a, c, b""", {}, namespace)
+
+        self.assertEqual(namespace['matched_value'], to_be_matched)
 
 
 if __name__ == '__main__':

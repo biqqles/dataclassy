@@ -227,6 +227,9 @@ If true, a [`__lt__`](https://docs.python.org/3/reference/datamodel.html#object.
 ##### `unsafe_hash`
 If true, force the generation of a [`__hash__`](https://docs.python.org/3/reference/datamodel.html#object.__hash__) method that attempts to hash the class as if it were a tuple of its hashable fields. If `unsafe_hash` is false, `__hash__` will only be generated if `eq` and `frozen` are both true.
 
+##### `match_args`
+If true (the default), generate a `__match_args__` attribute that enables structural pattern matching on Python 3.10+.
+
 ##### `frozen`
 If true, instances are nominally immutable: fields cannot be overwritten or deleted after initialisation in `__init__`. Attempting to do so will raise an `AttributeError`. **Warning: incurs a significant initialisation performance penalty.**
 

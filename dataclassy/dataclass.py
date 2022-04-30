@@ -60,7 +60,7 @@ def factory(producer: Callable[[], Factory.Produces]) -> Factory.Produces:
 class DataClassMeta(type):
     """The metaclass that implements data class behaviour."""
     DEFAULT_OPTIONS = dict(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False,
-                           hide_internals=True, iter=False, kwargs=False, slots=False)
+                           match_args=True, hide_internals=True, iter=False, kwargs=False, slots=False)
 
     def __new__(mcs, name, bases, dict_, **kwargs):
         """Create a new data class."""
@@ -133,6 +133,9 @@ class DataClassMeta(type):
 
         if (options['eq'] and options['frozen']) or options['unsafe_hash']:
             '__hash__' in all_attrs or dict_.setdefault('__hash__', generate_hash(all_annotations))
+
+        if options['match_args']:
+            dict_.setdefault('__match_args__', tuple(sorted(all_annotations, key=lambda n: n in all_defaults)))
 
         return super().__new__(mcs, name, bases, dict_)
 
