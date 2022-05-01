@@ -135,7 +135,7 @@ class DataClassMeta(type):
             '__hash__' in all_attrs or dict_.setdefault('__hash__', generate_hash(all_annotations))
 
         if options['match_args']:
-            dict_.setdefault('__match_args__', tuple(sorted(all_annotations, key=lambda n: n in all_defaults)))
+            dict_.setdefault('__match_args__', tuple(sorted(all_annotations, key=all_defaults.__contains__)))
 
         return super().__new__(mcs, name, bases, dict_)
 
