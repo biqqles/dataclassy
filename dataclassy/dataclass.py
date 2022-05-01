@@ -139,8 +139,8 @@ class DataClassMeta(type):
 
         return super().__new__(mcs, name, bases, dict_)
 
-    # noinspection PyMissingConstructor,PyUnresolvedReferences,PyTypeChecker,PyUnusedLocal
-    def __init__(cls, *args, **kwargs):
+    # noinspection PyMissingConstructor,PyUnresolvedReferences,PyTypeChecker
+    def __init__(cls, *_, **__):
         if cls.__dataclass__['eq'] and cls.__dataclass__['order']:
             from functools import total_ordering
             total_ordering(cls)
