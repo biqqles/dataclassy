@@ -54,14 +54,16 @@ class ClassyArgs(NamedTuple):
     init: bool = True
     repr: bool = True
     eq: bool = True
-    iter: bool = False
     frozen: bool = False
+    order: bool = False
+    unsafe_hash: bool = False
+    match_args: bool = True
+    kw_only: bool = False
+
     kwargs: bool = False
     slots: bool = False
-    order: bool = False
-    unsafe_hash: bool = True
+    iter: bool = False
     hide_internals: bool = True
-
 
 class ClassyField(NamedTuple):
     name: str
