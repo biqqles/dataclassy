@@ -20,7 +20,7 @@ class Pet:
 This section describes various motivations for using **dataclassy** over **dataclasses**.
 
 #### Backwards compatibility
-dataclassy implements the decorator options of the latest version of dataclasses, plus its own, such that they are compatible back to Python 3.6. It is [tested against](.github/workflows/ci.yml) CPython 3.6 through 3.10 and PyPy 3.6 through 3.8.
+dataclassy implements the decorator options of the latest version of dataclasses, plus its own, such that they are compatible back to Python 3.6. It is [tested against](.github/workflows/ci.yml) **CPython 3.6 through 3.11** and **PyPy 3.6 through 3.9**.
 
 #### Upgrade your data classes
 - new decorator options
